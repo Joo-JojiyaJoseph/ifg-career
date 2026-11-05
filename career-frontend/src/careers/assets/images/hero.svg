@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="Placeholder team photo">
+  <rect width="1200" height="800" fill="#0B4FA3"/>
+  <circle cx="420" cy="360" r="70" fill="#DCEBFB"/>
+  <circle cx="560" cy="340" r="80" fill="#EEF5FD"/>
+  <circle cx="700" cy="370" r="66" fill="#DCEBFB"/>
+  <rect x="300" y="460" width="560" height="180" rx="40" fill="#1976D2"/>
+</svg>

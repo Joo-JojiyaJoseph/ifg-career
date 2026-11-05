@@ -1,0 +1,13 @@
+vendor/
+node_modules/
+.env
+.env.local
+dist/
+storage/*.key
+public/storage
+career-backend/storage/app/private/*
+!career-backend/storage/app/private/.gitignore
+*.log
+.DS_Store
+.idea/
+.vscode/
