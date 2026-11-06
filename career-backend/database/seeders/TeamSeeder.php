@@ -11,6 +11,7 @@ class TeamSeeder extends Seeder
     public function run(): void
     {
         $map = [
+            'Data Operations' => ['Annotation', 'Data Collection', 'Medical Annotation'],
             'Software Engineering' => ['Platform', 'Web', 'Mobile'],
             'Data & Analytics' => ['Data Science', 'Data Engineering'],
             'Medical Imaging' => ['Radiology Products', 'Clinical Research'],

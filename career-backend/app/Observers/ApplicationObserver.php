@@ -10,6 +10,7 @@ use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use App\Models\JobPosting;
 use App\Models\RoleBlock;
+use App\Services\HrNotifier;
 use Illuminate\Support\Str;
 
 class ApplicationObserver
@@ -30,6 +31,11 @@ class ApplicationObserver
             $application->referred = true;
             $application->source = ApplicationSource::Referral;
         }
+    }
+
+    public function created(Application $application): void
+    {
+        app(HrNotifier::class)->newApplication($application);
     }
 
     public function updated(Application $application): void

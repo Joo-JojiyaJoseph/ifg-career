@@ -21,30 +21,35 @@ class WebsiteContentSeeder extends Seeder
         $settings = [
             'hero' => [
                 'motto' => 'Grow your career with Infolks Group',
-                'company_line' => 'Engineering, data, design and medical imaging teams, hiring across India.',
+                'company_line' => 'A company with a heart. Four companies and around 1,000 people, growing together since 2016.',
                 'banner_image' => '/images/placeholders/hero.svg',
             ],
             'company_numbers' => [
-                'employees' => 1200,
-                'years' => 18,
-                'clients' => 240,
+                'employees' => 1000,
+                'years' => 10,
+                'clients' => null,
             ],
             'about_intro' => [
                 'title' => 'About the group',
-                'intro' => 'Infolks Group is the parent company of Infolks, Webfolks, Dataways and Medrays.',
+                'intro' => 'One of India’s fastest growing business groups. Infolks Group started in 2016 in Mannarkkad, Kerala, as the state’s first data labeling service provider, and today runs Infolks, Webfolks, Dataways and Medrays.',
             ],
             'social_links' => [
-                ['name' => 'LinkedIn', 'url' => 'https://www.linkedin.com/company/infolks-group'],
-                ['name' => 'Instagram', 'url' => 'https://www.instagram.com/'],
-                ['name' => 'Facebook', 'url' => 'https://www.facebook.com/'],
-                ['name' => 'YouTube', 'url' => 'https://www.youtube.com/'],
+                ['name' => 'LinkedIn', 'url' => 'https://www.linkedin.com/company/infolks-group/'],
+                ['name' => 'Instagram', 'url' => 'https://instagram.com/infolks_group'],
+                ['name' => 'Facebook', 'url' => 'https://www.facebook.com/profile.php?id=61575503116851'],
+                ['name' => 'X', 'url' => 'https://twitter.com/Infolks_Group'],
+                ['name' => 'YouTube', 'url' => 'https://www.youtube.com/channel/UC0siki2wYSW7QZ1UuSDeYsQ'],
             ],
             'footer' => [
                 'copyright' => 'Infolks Group. All rights reserved.',
+                'tagline' => 'A company with a heart',
+                'contact_email' => 'recruitment@infolksgroup.com',
+                'contact_phone' => '+91 70258 89922',
+                'address' => 'Head Office, Infolks Tower, Mannarkkad, Kerala, India 678583',
             ],
             'promo_card' => [
                 'headline' => 'Grow your career with Infolks Group',
-                'tagline' => 'Innovate • Learn • Belong',
+                'tagline' => 'A company with a heart',
                 'image' => '/images/placeholders/promo.svg',
             ],
             'quick_apply_confirmation_text' => [
@@ -58,9 +63,9 @@ class WebsiteContentSeeder extends Seeder
         }
 
         $blocks = [
-            ['How we work', 'Small cross-entity teams ship in the open and review each other’s work.', 'UserGroupIcon'],
-            ['What we provide', 'Learning time, mentorship and the tools to do careful work.', 'AcademicCapIcon'],
-            ['Our culture', 'A respectful workplace. People stay because the work and the teams are worth it.', 'HeartIcon'],
+            ['How we work', 'Data labeling, AI data collection, medical annotation and software, delivered by teams that share one head office and one way of working.', 'UserGroupIcon'],
+            ['What we provide', 'Training from day one, mentors who have done the work, and room to grow from six people to a thousand, as the group itself did.', 'AcademicCapIcon'],
+            ['Our culture', 'A company with a heart. A respectful workplace where people stay because the work and the teams are worth it.', 'HeartIcon'],
         ];
 
         foreach ($blocks as $index => [$title, $body, $icon]) {
@@ -86,9 +91,9 @@ class WebsiteContentSeeder extends Seeder
 
         $entities = Entity::query()->pluck('id', 'slug');
         $stories = [
-            ['Ananya Rao', 'Software Engineer', 'infolks', 'I joined for the product work and stayed for the people.'],
-            ['Farhan Sheikh', 'Data Analyst', 'dataways', 'The questions we get are real, and so is the support.'],
-            ['Diya Menon', 'Designer', 'webfolks', 'Design sits with engineering, not in a separate queue.'],
+            ['Ananya Rao', 'Annotation Specialist', 'infolks', 'I started with image annotation and now lead a LiDAR team.'],
+            ['Farhan Sheikh', 'Data Collection Coordinator', 'dataways', 'The datasets we collect train real AI models, and the support is real too.'],
+            ['Diya Menon', 'Frontend Developer', 'webfolks', 'Design and engineering sit together, so ideas ship quickly.'],
         ];
 
         foreach ($stories as $index => [$name, $role, $entity, $quote]) {
@@ -106,16 +111,16 @@ class WebsiteContentSeeder extends Seeder
         }
 
         foreach ([
-            ['Kochi campus drive', '2026-08-12', 'Students talking with engineers from Infolks Group.'],
-            ['Hyderabad open house', '2026-06-03', 'A Saturday open house at the Hyderabad office.'],
-            ['Chennai clinical workshop', '2026-04-18', 'Medrays hosted a workshop with imaging specialists.'],
-        ] as $index => [$name, $date, $caption]) {
+            ['Mannarkkad walk-in drive', '2026-08-12', 'Walk-in interviews at Infolks Tower, Mannarkkad.', 'drive-walkin'],
+            ['Campus drive', '2026-06-03', 'Final-year students meeting teams from across Infolks Group.', 'drive-campus'],
+            ['Medrays doctors panel day', '2026-04-18', 'Medrays met doctors joining its medical labeling panel.', 'drive-doctors'],
+        ] as $index => [$name, $date, $caption, $image]) {
             RecruitmentDrive::query()->updateOrCreate(
                 ['name' => $name],
                 [
                     'drive_date' => $date,
                     'caption' => $caption,
-                    'photo_path' => '/images/placeholders/drive.svg',
+                    'photo_path' => "/images/placeholders/{$image}.svg",
                     'sort_order' => $index + 1,
                     'is_published' => true,
                 ],
@@ -125,7 +130,7 @@ class WebsiteContentSeeder extends Seeder
         foreach ([
             ['Do I need a Google account?', '<p>Yes. Candidates sign in with Google. HR users sign in with email and a password.</p>'],
             ['Can I apply to more than one role?', '<p>Yes. Each job is a separate application. A block applies only to the same role for six months after a rejection that followed a shortlist.</p>'],
-            ['Where is the office?', '<p>Teams work from Kochi, Bengaluru, Hyderabad, Pune, Chennai and other Indian cities. Each job lists its location.</p>'],
+            ['Where is the office?', '<p>Our head office is Infolks Tower, Mannarkkad, Kerala, India 678583. Each job lists its own location.</p>'],
         ] as $index => [$question, $answer]) {
             Faq::query()->updateOrCreate(
                 ['question' => $question],
@@ -134,8 +139,9 @@ class WebsiteContentSeeder extends Seeder
         }
 
         foreach ([
-            ['Great Place to Work', 2025],
-            ['ISO 27001', 2024],
+            ['ISO 27001:2013', null],
+            ['EU GDPR', null],
+            ['HIPAA', null],
         ] as $index => [$name, $year]) {
             Recognition::query()->updateOrCreate(
                 ['name' => $name],

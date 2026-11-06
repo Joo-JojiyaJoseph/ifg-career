@@ -8,6 +8,7 @@ use Illuminate\Database\Seeder;
 class DepartmentSeeder extends Seeder
 {
     public const NAMES = [
+        'Data Operations',
         'Software Engineering',
         'Data & Analytics',
         'Medical Imaging',

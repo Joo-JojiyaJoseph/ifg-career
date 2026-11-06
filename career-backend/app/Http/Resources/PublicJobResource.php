@@ -40,6 +40,7 @@ class PublicJobResource extends JsonResource
                 'slug' => $this->entity->slug,
                 'motto' => $this->entity->motto,
                 'short_description' => $this->entity->short_description,
+                'website_url' => $this->entity->website_url,
                 'theme' => $this->entity->theme,
             ] : null,
             'department' => $this->department ? [

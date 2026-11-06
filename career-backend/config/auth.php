@@ -125,4 +125,10 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    | HR portal two-factor sign-in. Off: HR and Admin sign in with email and password.
+    | On: Admins must set up an authenticator app, and anyone who has one confirmed is asked for a code.
+    */
+    'hr_two_factor' => (bool) env('HR_REQUIRE_TWO_FACTOR', false),
+
 ];

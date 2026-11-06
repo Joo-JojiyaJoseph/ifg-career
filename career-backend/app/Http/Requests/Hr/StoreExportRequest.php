@@ -15,7 +15,7 @@ class StoreExportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', Rule::in(['candidates', 'applications'])],
+            'type' => ['required', Rule::in(['candidates', 'applications', 'talent_members'])],
             'filters' => ['nullable', 'array'],
         ];
     }

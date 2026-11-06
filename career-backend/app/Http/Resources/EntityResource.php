@@ -17,6 +17,7 @@ class EntityResource extends JsonResource
             'slug' => $this->slug,
             'motto' => $this->motto,
             'short_description' => $this->short_description,
+            'website_url' => $this->website_url,
             'theme' => $this->theme,
             'sort_order' => $this->sort_order,
         ];

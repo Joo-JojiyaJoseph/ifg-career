@@ -1,0 +1,68 @@
+import {
+  AcademicCapIcon,
+  BeakerIcon,
+  BoltIcon,
+  BriefcaseIcon,
+  BuildingOffice2Icon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  CheckBadgeIcon,
+  ClipboardDocumentCheckIcon,
+  CodeBracketIcon,
+  CpuChipIcon,
+  DocumentTextIcon,
+  FaceSmileIcon,
+  GiftIcon,
+  GlobeAltIcon,
+  HandRaisedIcon,
+  HeartIcon,
+  LightBulbIcon,
+  PhoneIcon,
+  PuzzlePieceIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  StarIcon,
+  TrophyIcon,
+  UserGroupIcon,
+  UsersIcon,
+  VideoCameraIcon,
+} from '@heroicons/react/24/outline'
+
+/**
+ * Curated Heroicons HR can pick for About blocks. Only these are bundled, so the site stays small.
+ */
+export const heroiconMap = {
+  AcademicCapIcon,
+  BeakerIcon,
+  BoltIcon,
+  BriefcaseIcon,
+  BuildingOffice2Icon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  CheckBadgeIcon,
+  ClipboardDocumentCheckIcon,
+  CodeBracketIcon,
+  CpuChipIcon,
+  DocumentTextIcon,
+  FaceSmileIcon,
+  GiftIcon,
+  GlobeAltIcon,
+  HandRaisedIcon,
+  HeartIcon,
+  LightBulbIcon,
+  PhoneIcon,
+  PuzzlePieceIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  StarIcon,
+  TrophyIcon,
+  UserGroupIcon,
+  UsersIcon,
+  VideoCameraIcon,
+}
+
+export function iconFor(name) {
+  return heroiconMap[name] ?? SparklesIcon
+}

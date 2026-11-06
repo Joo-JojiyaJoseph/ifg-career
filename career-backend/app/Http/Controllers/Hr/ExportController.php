@@ -9,6 +9,7 @@ use App\Http\Resources\ExportResource;
 use App\Models\Application;
 use App\Models\Candidate;
 use App\Models\Export;
+use App\Models\TalentMember;
 use App\Services\ExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,11 @@ class ExportController extends Controller
     public function store(StoreExportRequest $request, ExportService $exports): JsonResponse
     {
         $type = $request->validated('type');
-        $this->authorize($type === 'applications' ? 'viewAny' : 'export', $type === 'applications' ? Application::class : Candidate::class);
+        match ($type) {
+            'applications' => $this->authorize('viewAny', Application::class),
+            'talent_members' => $this->authorize('export', TalentMember::class),
+            default => $this->authorize('export', Candidate::class),
+        };
 
         $export = $exports->queue($request->user(), $type, $request->exportFilters());
 

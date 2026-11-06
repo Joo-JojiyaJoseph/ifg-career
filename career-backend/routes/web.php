@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Public\GoogleAuthController;
+use App\Http\Controllers\Public\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,8 +16,9 @@ Route::prefix('api/v1')->middleware('throttle:oauth')->group(function () {
     Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 });
 
-Route::get('unsubscribe/{token}', function () {
-    return response()->json([
-        'message' => 'Unsubscribe is completed in a later phase.',
-    ]);
-})->name('public.unsubscribe');
+// Old-style links point to the careers page that confirms the unsubscribe.
+Route::get('unsubscribe/{token}', function (string $token) {
+    return redirect()->away(rtrim((string) config('app.frontend_careers_url'), '/').'/unsubscribe/'.rawurlencode($token));
+})->where('token', '[A-Za-z0-9]{20,64}')->name('public.unsubscribe');
+
+Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:public')->name('sitemap');

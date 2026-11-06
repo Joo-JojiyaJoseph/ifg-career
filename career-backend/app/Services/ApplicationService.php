@@ -34,6 +34,10 @@ class ApplicationService
         $check = $this->eligibility->forJob($candidate, $job);
 
         if (! $check['eligible']) {
+            if (in_array($check['code'], ['blacklisted', 'role_blocked'], true)) {
+                app(HrNotifier::class)->blockedAttempt($candidate, $job->title, $check['code']);
+            }
+
             throw new IneligibleApplicationException($check);
         }
 

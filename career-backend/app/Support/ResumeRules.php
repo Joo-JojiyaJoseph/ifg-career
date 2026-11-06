@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Rules\VirusFree;
+
 class ResumeRules
 {
     /**
@@ -9,7 +11,7 @@ class ResumeRules
      */
     public static function file(bool $required = true): array
     {
-        return [$required ? 'required' : 'nullable', 'file', 'mimes:pdf,docx', 'max:5120'];
+        return [$required ? 'required' : 'nullable', 'file', 'mimes:pdf,docx', 'max:5120', new VirusFree];
     }
 
     /**

@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-brand-50 font-sans text-text antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+  }
+
+  h1 {
+    letter-spacing: -0.025em;
+  }
+
+  ::selection {
+    @apply bg-brand-500/25 text-ink;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Page changes (React Router `viewTransition` links): the old page lifts away; the new one fades in via PageTransition. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-out 180ms ease-in both;
+  }
+
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@layer components {
+  /* Frosted glass over light, colourful backgrounds. */
+  .glass {
+    @apply border border-white/70 bg-white/60 shadow-glass backdrop-blur-xl backdrop-saturate-150;
+  }
+
+  /* Smoked glass over the dark brand gradient (hero, sidebar). */
+  .glass-dark {
+    @apply border border-white/15 bg-white/[0.08] text-white shadow-glass-dark backdrop-blur-xl backdrop-saturate-150;
+  }
+
+  /* Fallback when the browser cannot blur: keep text readable. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      @apply bg-white/95;
+    }
+
+    .glass-dark {
+      @apply bg-ink/90;
+    }
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-cyan-100 to-white bg-clip-text text-transparent;
+  }
+
+  /* Pointer-following highlight; the position comes from useSpotlight(). */
+  .spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at var(--spot-x, 50%) var(--spot-y, 50%), var(--spot-color, rgba(30, 136, 229, 0.14)), transparent 45%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .spotlight:hover::before {
+    opacity: 1;
+  }
+
+  /* A light sweep across a button on hover. */
+  .shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    transform: translateX(-120%) skewX(-20deg);
+    pointer-events: none;
+  }
+
+  .shine:hover::after {
+    animation: shine 0.9s ease-out;
+  }
+
+  /* Hide scrollbars on horizontal carousels while keeping them scrollable. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

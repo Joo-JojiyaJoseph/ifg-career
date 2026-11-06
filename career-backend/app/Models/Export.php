@@ -7,6 +7,7 @@ use Database\Factories\ExportFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 
 class Export extends Model
@@ -40,7 +41,7 @@ class Export extends Model
 
     public function downloadUrl(): ?string
     {
-        if (blank($this->file_path) || ! \Illuminate\Support\Facades\Route::has('hr.exports.download')) {
+        if (blank($this->file_path) || ! Route::has('hr.exports.download')) {
             return null;
         }
 

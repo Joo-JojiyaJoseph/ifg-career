@@ -2,25 +2,39 @@
 
 namespace App\Providers;
 
+use App\Listeners\LogSentEmail;
 use App\Models\AboutBlock;
 use App\Models\Application;
+use App\Models\ApplicationStatusHistory;
+use App\Models\AuditLog;
+use App\Models\Campaign;
 use App\Models\Candidate;
+use App\Models\CandidateNote;
+use App\Models\Department;
+use App\Models\EmailLog;
 use App\Models\EmployeeStory;
 use App\Models\Entity;
+use App\Models\Export;
 use App\Models\Faq;
 use App\Models\InterviewRound;
 use App\Models\InterviewStep;
 use App\Models\JobPosting;
 use App\Models\MediaItem;
+use App\Models\NotificationPreference;
 use App\Models\Recognition;
 use App\Models\RecruitmentDrive;
+use App\Models\RoleBlock;
+use App\Models\SavedFilter;
 use App\Models\SiteSetting;
+use App\Models\Skill;
+use App\Models\TalentMember;
+use App\Models\Team;
+use App\Models\User;
 use App\Observers\ApplicationObserver;
 use App\Observers\CandidateObserver;
 use App\Observers\ContentObserver;
 use App\Observers\InterviewRoundObserver;
 use App\Observers\JobPostingObserver;
-use App\Listeners\LogSentEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -63,12 +77,22 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->ip());
         });
 
+        // Public reads are cheap and cached. Many candidates can share one IP (a campus drive on one
+        // Wi-Fi network), so this is generous; applying and sign-ups have their own stricter limits.
         RateLimiter::for('public', function (Request $request) {
-            return Limit::perMinute(60)->by($request->ip());
+            return Limit::perMinute((int) config('services.rate_limits.public_per_minute', 600))->by($request->ip());
         });
 
         RateLimiter::for('apply', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('search', function (Request $request) {
+            return Limit::perMinute(60)->by((string) ($request->user()?->id ?: $request->ip()));
+        });
+
+        RateLimiter::for('unsubscribe', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
         });
 
         RateLimiter::for('export', function (Request $request) {
@@ -81,33 +105,33 @@ class AppServiceProvider extends ServiceProvider
     private function registerPolicies(): void
     {
         $models = [
-            \App\Models\User::class,
-            \App\Models\Entity::class,
-            \App\Models\Department::class,
-            \App\Models\Team::class,
-            \App\Models\Skill::class,
-            \App\Models\JobPosting::class,
-            \App\Models\Candidate::class,
-            \App\Models\Application::class,
-            \App\Models\ApplicationStatusHistory::class,
-            \App\Models\InterviewRound::class,
-            \App\Models\CandidateNote::class,
-            \App\Models\RoleBlock::class,
-            \App\Models\TalentMember::class,
-            \App\Models\Campaign::class,
-            \App\Models\EmailLog::class,
-            \App\Models\NotificationPreference::class,
-            \App\Models\SavedFilter::class,
-            \App\Models\Export::class,
-            \App\Models\AuditLog::class,
-            \App\Models\SiteSetting::class,
-            \App\Models\AboutBlock::class,
-            \App\Models\InterviewStep::class,
-            \App\Models\EmployeeStory::class,
-            \App\Models\RecruitmentDrive::class,
-            \App\Models\Faq::class,
-            \App\Models\Recognition::class,
-            \App\Models\MediaItem::class,
+            User::class,
+            Entity::class,
+            Department::class,
+            Team::class,
+            Skill::class,
+            JobPosting::class,
+            Candidate::class,
+            Application::class,
+            ApplicationStatusHistory::class,
+            InterviewRound::class,
+            CandidateNote::class,
+            RoleBlock::class,
+            TalentMember::class,
+            Campaign::class,
+            EmailLog::class,
+            NotificationPreference::class,
+            SavedFilter::class,
+            Export::class,
+            AuditLog::class,
+            SiteSetting::class,
+            AboutBlock::class,
+            InterviewStep::class,
+            EmployeeStory::class,
+            RecruitmentDrive::class,
+            Faq::class,
+            Recognition::class,
+            MediaItem::class,
         ];
 
         foreach ($models as $model) {

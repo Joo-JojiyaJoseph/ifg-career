@@ -3,35 +3,27 @@
 namespace App\Notifications;
 
 use App\Models\Export;
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 
-class ExportReady extends Notification
+class ExportReady extends HrNotification
 {
-    use Queueable;
-
     public function __construct(public Export $export) {}
 
-    /**
-     * @return list<string>
-     */
-    public function via(object $notifiable): array
+    public function type(): string
     {
-        return ['database'];
+        return 'export_ready';
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
+    protected function payload(): array
     {
         $label = str_replace('_', ' ', (string) $this->export->type);
 
         return [
-            'type' => 'export_ready',
             'title' => 'Export ready to download',
             'message' => 'Your '.$label.' export is ready. The link expires in 24 hours.',
+            'url' => null,
+            'level' => 'success',
             'export_id' => $this->export->id,
+            'download_path' => '/api/v1/hr/exports/'.$this->export->id.'/download',
             'expires_at' => $this->export->expires_at?->toIso8601String(),
         ];
     }

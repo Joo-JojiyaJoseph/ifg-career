@@ -5,26 +5,47 @@ use App\Http\Controllers\Candidate\ProfileController;
 use App\Http\Controllers\Candidate\SessionController;
 use App\Http\Controllers\Candidate\SubscriptionController;
 use App\Http\Controllers\Hr\ApplicationController as HrApplicationController;
+use App\Http\Controllers\Hr\AuditLogController;
 use App\Http\Controllers\Hr\AuthController;
 use App\Http\Controllers\Hr\CandidateController;
 use App\Http\Controllers\Hr\CandidateResumeController;
+use App\Http\Controllers\Hr\ContentController;
+use App\Http\Controllers\Hr\DashboardController;
 use App\Http\Controllers\Hr\ExportController;
+use App\Http\Controllers\Hr\InterviewController;
 use App\Http\Controllers\Hr\JobPostingController;
+use App\Http\Controllers\Hr\ListController;
+use App\Http\Controllers\Hr\NotificationController;
+use App\Http\Controllers\Hr\ReportController;
 use App\Http\Controllers\Hr\SavedFilterController;
+use App\Http\Controllers\Hr\SearchController;
+use App\Http\Controllers\Hr\SystemController;
+use App\Http\Controllers\Hr\TalentController;
+use App\Http\Controllers\Hr\UserController;
+use App\Http\Controllers\Public\ContentController as PublicContentController;
 use App\Http\Controllers\Public\EntityController;
 use App\Http\Controllers\Public\JobController;
 use App\Http\Controllers\Public\MetaController;
 use App\Http\Controllers\Public\QuickApplyController;
 use App\Http\Controllers\Public\TalentCommunityController;
+use App\Http\Controllers\Public\UnsubscribeController;
+use App\Services\ContentService;
+use App\Services\ReportService;
+use App\Support\ContentTypes;
+use App\Support\ListTypes;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('throttle:public')->group(function () {
     Route::get('public/meta', MetaController::class);
     Route::get('public/entities', [EntityController::class, 'index']);
+    Route::get('public/content', PublicContentController::class);
     Route::get('public/jobs', [JobController::class, 'index']);
     Route::get('public/jobs/{jobPosting}', [JobController::class, 'show'])->name('public.jobs.show');
     Route::post('public/quick-apply', [QuickApplyController::class, 'store'])->middleware('throttle:apply');
     Route::post('public/talent-community', [TalentCommunityController::class, 'store'])->middleware('throttle:apply');
+    Route::get('public/unsubscribe/{token}', [UnsubscribeController::class, 'show'])->middleware('throttle:unsubscribe');
+    Route::post('public/unsubscribe/{token}', [UnsubscribeController::class, 'unsubscribe'])->middleware('throttle:unsubscribe');
+    Route::post('public/resubscribe/{token}', [UnsubscribeController::class, 'resubscribe'])->middleware('throttle:unsubscribe');
 });
 
 Route::get('hr/candidates/{candidate}/resume/file', [CandidateResumeController::class, 'file'])
@@ -43,6 +64,13 @@ Route::prefix('hr')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('meta', MetaController::class);
+
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('notifications/{id}/read', [NotificationController::class, 'read'])->whereUuid('id');
+        Route::get('notification-preferences', [NotificationController::class, 'preferences']);
+        Route::put('notification-preferences', [NotificationController::class, 'updatePreferences']);
 
         Route::get('saved-filters', [SavedFilterController::class, 'index']);
         Route::post('saved-filters', [SavedFilterController::class, 'store']);
@@ -79,10 +107,77 @@ Route::prefix('hr')->group(function () {
         Route::post('applications/{application}/undo-status', [HrApplicationController::class, 'undoStatus'])->middleware('permission:applications.update');
         Route::post('applications/{application}/assign-job', [HrApplicationController::class, 'assignJob'])->middleware('permission:applications.update');
 
-        Route::get('exports', [ExportController::class, 'index'])->middleware('permission:candidates.export|applications.view');
-        Route::post('exports', [ExportController::class, 'store'])->middleware(['permission:candidates.export|applications.view', 'throttle:export']);
-        Route::get('exports/{export}', [ExportController::class, 'show'])->middleware('permission:candidates.export|applications.view');
-        Route::get('exports/{export}/download', [ExportController::class, 'download'])->middleware('permission:candidates.export|applications.view');
+        Route::get('interviews', [InterviewController::class, 'index'])->middleware('permission:interviews.view');
+        Route::get('interviews/pipeline', [InterviewController::class, 'pipeline'])->middleware('permission:interviews.view');
+        Route::post('applications/{application}/rounds', [InterviewController::class, 'store'])->middleware('permission:interviews.manage');
+        Route::patch('applications/{application}/result', [InterviewController::class, 'result'])->middleware('permission:interviews.manage');
+        Route::match(['put', 'patch'], 'rounds/{round}', [InterviewController::class, 'update'])->middleware('permission:interviews.manage');
+        Route::delete('rounds/{round}', [InterviewController::class, 'destroy'])->middleware('permission:interviews.manage');
+        Route::patch('rounds/{round}/status', [InterviewController::class, 'status'])->middleware('permission:interviews.manage');
+        Route::post('rounds/{round}/retry-sync', [InterviewController::class, 'retrySync'])->middleware('permission:interviews.manage');
+
+        Route::get('talent-members', [TalentController::class, 'members'])->middleware('permission:talent.view');
+        Route::get('campaigns', [TalentController::class, 'campaigns'])->middleware('permission:talent.view');
+        Route::post('campaigns/preview', [TalentController::class, 'preview'])->middleware('permission:campaigns.send');
+        Route::post('campaigns', [TalentController::class, 'store'])->middleware('permission:campaigns.send');
+        Route::get('campaigns/{campaign}', [TalentController::class, 'show'])->middleware('permission:talent.view');
+        Route::match(['put', 'patch'], 'campaigns/{campaign}', [TalentController::class, 'update'])->middleware('permission:campaigns.send');
+        Route::post('campaigns/{campaign}/send', [TalentController::class, 'send'])->middleware(['permission:campaigns.send', 'throttle:export']);
+
+        Route::middleware('permission:content.manage')->prefix('content')->group(function () {
+            Route::get('settings', [ContentController::class, 'settings']);
+            Route::post('settings/{key}', [ContentController::class, 'updateSetting'])->whereIn('key', array_keys(ContentService::SETTINGS));
+            Route::get('entities', [ContentController::class, 'entities']);
+            Route::post('entities/{slug}', [ContentController::class, 'updateEntity'])->where('slug', '[a-z0-9-]+');
+            Route::get('{type}', [ContentController::class, 'index'])->where('type', ContentTypes::PATTERN);
+            Route::post('{type}', [ContentController::class, 'store'])->where('type', ContentTypes::PATTERN);
+            Route::post('{type}/reorder', [ContentController::class, 'reorder'])->where('type', ContentTypes::PATTERN);
+            Route::post('{type}/{id}', [ContentController::class, 'update'])->where(['type' => ContentTypes::PATTERN, 'id' => '[0-9]+']);
+            Route::delete('{type}/{id}', [ContentController::class, 'destroy'])->where(['type' => ContentTypes::PATTERN, 'id' => '[0-9]+']);
+        });
+
+        Route::prefix('dashboard')->middleware('permission:applications.view|jobs.view')->group(function () {
+            Route::get('stats', [DashboardController::class, 'stats']);
+            Route::get('action-items', [DashboardController::class, 'actionItems']);
+            Route::get('pipeline', [DashboardController::class, 'pipeline']);
+            Route::get('applications-over-time', [DashboardController::class, 'applicationsOverTime']);
+            Route::get('sources', [DashboardController::class, 'sources']);
+            Route::get('upcoming-interviews', [DashboardController::class, 'upcomingInterviews']);
+            Route::get('recent-candidates', [DashboardController::class, 'recentCandidates']);
+            Route::get('promo', [DashboardController::class, 'promo']);
+        });
+        Route::get('search', SearchController::class)->middleware('throttle:search');
+
+        Route::get('reports', [ReportController::class, 'index'])->middleware('permission:reports.view');
+        Route::get('reports/{report}', [ReportController::class, 'show'])->middleware('permission:reports.view')->whereIn('report', array_keys(ReportService::REPORTS));
+
+        Route::middleware('permission:settings.users')->group(function () {
+            Route::get('users', [UserController::class, 'index']);
+            Route::post('users', [UserController::class, 'store']);
+            Route::patch('users/{user}', [UserController::class, 'update']);
+            Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive']);
+            Route::post('users/{user}/reset-2fa', [UserController::class, 'resetTwoFactor']);
+            Route::post('users/{user}/resend-invite', [UserController::class, 'resendInvite']);
+            Route::get('roles-permissions', [UserController::class, 'roles']);
+            Route::put('roles-permissions', [UserController::class, 'saveRoles']);
+            Route::get('system/health', [SystemController::class, 'health']);
+            Route::post('system/test/{integration}', [SystemController::class, 'test'])->whereIn('integration', ['google_calendar', 'mail'])->middleware('throttle:export');
+            Route::post('system/failed-jobs/{uuid}/retry', [SystemController::class, 'retryFailed'])->whereUuid('uuid');
+        });
+
+        Route::middleware('permission:settings.lists')->group(function () {
+            Route::get('lists/{type}', [ListController::class, 'index'])->where('type', ListTypes::PATTERN);
+            Route::post('lists/{type}', [ListController::class, 'store'])->where('type', ListTypes::PATTERN);
+            Route::patch('lists/{type}/{id}', [ListController::class, 'update'])->where(['type' => ListTypes::PATTERN, 'id' => '[0-9]+']);
+            Route::delete('lists/{type}/{id}', [ListController::class, 'destroy'])->where(['type' => ListTypes::PATTERN, 'id' => '[0-9]+']);
+        });
+
+        Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit.view');
+
+        Route::get('exports', [ExportController::class, 'index'])->middleware('permission:candidates.export|applications.view|talent.export');
+        Route::post('exports', [ExportController::class, 'store'])->middleware(['permission:candidates.export|applications.view|talent.export', 'throttle:export']);
+        Route::get('exports/{export}', [ExportController::class, 'show'])->middleware('permission:candidates.export|applications.view|talent.export');
+        Route::get('exports/{export}/download', [ExportController::class, 'download'])->middleware('permission:candidates.export|applications.view|talent.export');
     });
 });
 

@@ -6,18 +6,21 @@ use App\Enums\CalendarSyncStatus;
 use App\Enums\InterviewMode;
 use App\Enums\RoundStatus;
 use App\Support\Auditable;
+use App\Support\HasPublicId;
 use Database\Factories\InterviewRoundFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Support\Carbon;
 
 class InterviewRound extends Model
 {
     /** @use HasFactory<InterviewRoundFactory> */
-    use Auditable, HasFactory;
+    use Auditable, HasFactory, HasPublicId;
 
     protected $fillable = [
+        'public_id',
         'application_id',
         'round_number',
         'round_name',
@@ -30,6 +33,8 @@ class InterviewRound extends Model
         'google_event_id',
         'calendar_sync_status',
         'calendar_sync_error',
+        'calendar_sync_attempts',
+        'calendar_synced_at',
         'status',
         'feedback',
         'created_by',
@@ -44,6 +49,8 @@ class InterviewRound extends Model
             'calendar_sync_status' => CalendarSyncStatus::class,
             'scheduled_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
+            'calendar_synced_at' => 'datetime',
+            'calendar_sync_attempts' => 'integer',
             'duration_minutes' => 'integer',
             'round_number' => 'integer',
         ];
@@ -84,6 +91,25 @@ class InterviewRound extends Model
     public function scopeThisWeek($query)
     {
         return $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()]);
+    }
+
+    public function endsAt(): Carbon
+    {
+        return $this->scheduled_at->copy()->addMinutes($this->duration_minutes ?: 60);
+    }
+
+    /**
+     * Statuses this round may move to next.
+     *
+     * @return list<RoundStatus>
+     */
+    public function allowedStatuses(): array
+    {
+        return match ($this->status) {
+            RoundStatus::Scheduled => [RoundStatus::Completed, RoundStatus::Passed, RoundStatus::NotSelected],
+            RoundStatus::Completed => [RoundStatus::Passed, RoundStatus::NotSelected],
+            RoundStatus::Passed, RoundStatus::NotSelected => [],
+        };
     }
 
     public function scopeSyncFailed($query)

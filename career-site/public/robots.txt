@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /profile
+Disallow: /my-applications
+Disallow: /settings
+Disallow: /unsubscribe/
+Sitemap: https://careers.infolksgroup.com/sitemap.xml

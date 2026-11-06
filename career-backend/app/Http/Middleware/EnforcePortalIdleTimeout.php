@@ -24,7 +24,10 @@ class EnforcePortalIdleTimeout
                 ], 401);
             }
 
-            session(['hr.last_activity' => now()->toIso8601String()]);
+            // Background polling (the notification bell) must not keep an idle session alive.
+            if (! $request->headers->has('X-Background-Request')) {
+                session(['hr.last_activity' => now()->toIso8601String()]);
+            }
         }
 
         return $next($request);

@@ -42,6 +42,10 @@ class QuickApplyService
             $check = $this->eligibility->forGeneral($candidate, $department->id);
 
             if (! $check['eligible']) {
+                if (in_array($check['code'], ['blacklisted', 'role_blocked'], true)) {
+                    app(HrNotifier::class)->blockedAttempt($candidate, 'General – '.$department->name, $check['code']);
+                }
+
                 throw new IneligibleApplicationException($check);
             }
         }

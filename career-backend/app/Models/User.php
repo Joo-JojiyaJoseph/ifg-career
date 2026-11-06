@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\HrResetPassword;
 use App\Support\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -106,6 +107,6 @@ class User extends Authenticatable
 
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\HrResetPassword($token));
+        $this->notify(new HrResetPassword($token));
     }
 }

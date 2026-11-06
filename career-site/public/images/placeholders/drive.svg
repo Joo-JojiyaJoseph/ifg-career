@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" role="img" aria-label="Recruitment drive placeholder">
+  <rect width="480" height="320" fill="#EEF5FD"/>
+  <rect x="40" y="40" width="400" height="120" rx="12" fill="#0B4FA3"/>
+  <rect x="70" y="80" width="200" height="16" rx="8" fill="#FFFFFF" opacity=".9"/><rect x="70" y="108" width="140" height="12" rx="6" fill="#F39223"/>
+  <g fill="#1976D2" opacity=".7">
+    <circle cx="90" cy="214" r="18"/><path d="M60 300c0-40 14-62 30-62s30 22 30 62z"/>
+    <circle cx="170" cy="210" r="18"/><path d="M140 300c0-40 14-62 30-62s30 22 30 62z"/>
+    <circle cx="250" cy="214" r="18"/><path d="M220 300c0-40 14-62 30-62s30 22 30 62z"/>
+    <circle cx="330" cy="210" r="18"/><path d="M300 300c0-40 14-62 30-62s30 22 30 62z"/>
+    <circle cx="410" cy="214" r="18"/><path d="M380 300c0-40 14-62 30-62s30 22 30 62z"/>
+  </g>
+</svg>

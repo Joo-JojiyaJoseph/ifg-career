@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ColourTag;
 use App\Enums\Gender;
 use App\Enums\SignupSource;
+use App\Filters\CandidateFilter;
 use App\Support\Auditable;
 use App\Support\HasPublicId;
 use Database\Factories\CandidateFactory;
@@ -167,7 +168,7 @@ class Candidate extends Authenticatable
 
     public function scopeFilter($query, array $filters)
     {
-        return app(\App\Filters\CandidateFilter::class)->apply($query, $filters);
+        return app(CandidateFilter::class)->apply($query, $filters);
     }
 
     public function isProfileComplete(): bool

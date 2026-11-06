@@ -58,12 +58,15 @@ class HrAuthService
             'hr.pending_ip' => $ip,
         ]);
 
-        if ($user->isAdmin() && $user->two_factor_confirmed_at === null) {
-            return ['status' => 'two_factor_setup_required'];
-        }
+        // Two-factor sign-in is optional for the organisation (HR_REQUIRE_TWO_FACTOR, off by default).
+        if (config('auth.hr_two_factor')) {
+            if ($user->isAdmin() && $user->two_factor_confirmed_at === null) {
+                return ['status' => 'two_factor_setup_required'];
+            }
 
-        if ($user->two_factor_confirmed_at !== null) {
-            return ['status' => 'two_factor_required'];
+            if ($user->two_factor_confirmed_at !== null) {
+                return ['status' => 'two_factor_required'];
+            }
         }
 
         return ['status' => 'authenticated', 'user' => $this->completeLogin($user, $remember, $ip)];
@@ -147,10 +150,12 @@ class HrAuthService
     private function completeLogin(User $user, bool $remember, string $ip): User
     {
         $previousIp = $user->last_login_ip;
+        $previousLogin = $user->last_login_at?->toIso8601String();
 
         session()->regenerate();
         Auth::guard('web')->login($user, $remember);
-        session(['hr.last_activity' => now()->toIso8601String()]);
+        // The dashboard shows what is new since the previous sign-in.
+        session(['hr.last_activity' => now()->toIso8601String(), 'hr.previous_login_at' => $previousLogin]);
         session()->forget(['hr.pending_user_id', 'hr.pending_remember', 'hr.pending_ip', 'hr.pending_secret']);
 
         $user->forceFill([

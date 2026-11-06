@@ -18,6 +18,7 @@ class SkillSeeder extends Seeder
         'Communication', 'Stakeholder management', 'Recruitment', 'Technical writing',
         'Android', 'Kotlin', 'Swift', 'React Native', 'PostgreSQL', 'MongoDB', 'Elasticsearch',
         'Tableau', 'dbt', 'Airflow', 'Computer vision', 'NLP', 'Quality systems',
+        'Image annotation', 'Video annotation', 'LiDAR annotation', 'Data collection', 'Medical terminology', 'Attention to detail',
     ];
 
     public function run(): void

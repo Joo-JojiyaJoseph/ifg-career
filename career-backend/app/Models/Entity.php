@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\ImageService;
 use Database\Factories\EntityFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Entity extends Model
@@ -85,14 +85,6 @@ class Entity extends Model
 
     private function assetUrl(?string $path): ?string
     {
-        if (blank($path)) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
-            return $path;
-        }
-
-        return Storage::disk('public')->url($path);
+        return ImageService::url($path);
     }
 }

@@ -5,11 +5,13 @@ namespace App\Services;
 use App\Enums\ExportStatus;
 use App\Filters\CandidateFilter;
 use App\Filters\HrApplicationFilter;
+use App\Filters\TalentMemberFilter;
 use App\Jobs\GenerateExport;
 use App\Models\Application;
 use App\Models\AuditLog;
 use App\Models\Candidate;
 use App\Models\Export;
+use App\Models\TalentMember;
 use App\Models\User;
 use App\Notifications\ExportReady;
 use App\Support\XlsxWriter;
@@ -30,9 +32,11 @@ class ExportService
      */
     public function queue(User $user, string $type, array $filters): Export
     {
-        $filters = $type === 'applications'
-            ? $this->applicationFilters($filters)
-            : $this->candidateFilters($filters);
+        $filters = match ($type) {
+            'applications' => $this->applicationFilters($filters),
+            'talent_members' => array_filter(array_intersect_key($filters, array_flip(['q', 'source', 'subscribed', 'linked', 'joined_from', 'joined_to'])), fn ($value) => $value !== null && $value !== ''),
+            default => $this->candidateFilters($filters),
+        };
 
         $export = Export::query()->create([
             'user_id' => $user->id,
@@ -72,6 +76,7 @@ class ExportService
             [$headings, $rows] = match ($export->type) {
                 'candidates' => $this->candidateSheet($export->filters ?? []),
                 'applications' => $this->applicationSheet($export->filters ?? []),
+                'talent_members' => $this->talentSheet($export->filters ?? []),
                 default => throw new RuntimeException('Unknown export type.'),
             };
 
@@ -211,6 +216,35 @@ class ExportService
                     $application->result?->label(),
                     $application->applied_at?->format('d-m-Y'),
                     $application->is_flagged ? 'Yes' : 'No',
+                ];
+            }
+        });
+
+        return [$headings, $rows];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array{0: list<string>, 1: list<list<mixed>>}
+     */
+    private function talentSheet(array $filters): array
+    {
+        $headings = ['Name', 'Email', 'Phone', 'Source', 'Subscribed', 'Joined', 'Unsubscribed', 'Has candidate profile'];
+        $rows = [];
+
+        $query = TalentMember::query();
+        app(TalentMemberFilter::class)->apply($query, $filters);
+        $query->orderBy('id')->chunkById(500, function ($members) use (&$rows) {
+            foreach ($members as $member) {
+                $rows[] = [
+                    $member->name,
+                    $member->email,
+                    $member->phone,
+                    $member->source?->label(),
+                    $member->is_subscribed ? 'Yes' : 'No',
+                    $member->subscribed_at?->format('d-m-Y'),
+                    $member->unsubscribed_at?->format('d-m-Y'),
+                    $member->candidate_id ? 'Yes' : 'No',
                 ];
             }
         });

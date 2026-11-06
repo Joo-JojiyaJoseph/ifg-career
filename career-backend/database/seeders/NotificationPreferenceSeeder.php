@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\NotificationPreference;
 use App\Models\User;
+use App\Support\NotificationChannels;
 use App\Support\PermissionCatalog;
 use Illuminate\Database\Seeder;
 
@@ -17,7 +18,7 @@ class NotificationPreferenceSeeder extends Seeder
                     ['user_id' => $user->id, 'type' => $type],
                     [
                         'in_app' => true,
-                        'email' => in_array($type, ['interview_reminder', 'daily_digest'], true),
+                        'email' => in_array($type, NotificationChannels::EMAIL_BY_DEFAULT, true),
                     ],
                 );
             }

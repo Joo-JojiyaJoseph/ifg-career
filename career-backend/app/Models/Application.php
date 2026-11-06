@@ -7,6 +7,7 @@ use App\Enums\ApplicationSource;
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Enums\RoundStatus;
+use App\Filters\HrApplicationFilter;
 use App\Support\Auditable;
 use App\Support\HasPublicId;
 use Database\Factories\ApplicationFactory;
@@ -137,7 +138,7 @@ class Application extends Model
     {
         return $this->hasOne(InterviewRound::class)->ofMany(
             ['scheduled_at' => 'min'],
-            fn ($query) => $query->where('scheduled_at', '>=', now())->where('status', \App\Enums\RoundStatus::Scheduled),
+            fn ($query) => $query->where('scheduled_at', '>=', now())->where('status', RoundStatus::Scheduled),
         );
     }
 
@@ -166,7 +167,7 @@ class Application extends Model
 
     public function scopeFilter($query, array $filters)
     {
-        return app(\App\Filters\HrApplicationFilter::class)->apply($query, $filters);
+        return app(HrApplicationFilter::class)->apply($query, $filters);
     }
 
     public function canTransitionTo(ApplicationStatus $status): bool

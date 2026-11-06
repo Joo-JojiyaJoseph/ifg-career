@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class TalentMember extends Model
@@ -66,12 +65,15 @@ class TalentMember extends Model
         return $query->where('is_subscribed', true);
     }
 
+    /** Careers-site page where the member confirms and can re-subscribe. */
     public function unsubscribeUrl(): string
     {
-        return URL::temporarySignedRoute(
-            'public.unsubscribe',
-            now()->addYear(),
-            ['token' => $this->unsubscribe_token],
-        );
+        return rtrim((string) config('app.frontend_careers_url'), '/').'/unsubscribe/'.$this->unsubscribe_token;
+    }
+
+    /** API endpoint mail clients call for one-click unsubscribe (RFC 8058). */
+    public function oneClickUnsubscribeUrl(): string
+    {
+        return rtrim((string) config('app.url'), '/').'/api/v1/public/unsubscribe/'.$this->unsubscribe_token;
     }
 }
