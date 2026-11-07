@@ -102,6 +102,26 @@ Talent community campaigns send in batches of 100 using job batches, so a large 
 
 SPF, DKIM and DMARC belong on the domain that sends `careers@infolksgroup.com`.
 
+## Careers page content and photos
+
+The careers page follows the Infolks Group career page document: opening banner, our companies, a place to belong,
+interview procedure, quick apply, FAQs and footer. All of its text and photos live in the database and HR edits them
+in the portal under **Website Content**, one tab per section.
+
+To load the document's copy into an existing database (it updates the text and hides older FAQs, steps and cards; nothing is deleted):
+
+```bash
+php artisan migrate
+php artisan db:seed --class=EntitySeeder
+php artisan db:seed --class=WebsiteContentSeeder
+php artisan optimize:clear
+```
+
+The default photos are free Unsplash photos (Unsplash License) that load from Unsplash's image CDN; the list is in
+`database/seeders/Support/Photos.php`. Replace them with real Infolks Group photos in Website Content: the banner photo,
+each company's card photo, the culture photos (festivals, football, trips, birthdays), and the interview and quick apply photos.
+Uploads are resized and converted to WebP by the queue worker.
+
 ## Adding a company, department or team
 
 Entities, departments and teams are rows, not code.

@@ -6,6 +6,7 @@ import { ArrowTopRightOnSquareIcon, ShareIcon } from '@heroicons/react/24/outlin
 import { Aurora } from '@shared/ui/Aurora'
 import { EntityLogo } from '@shared/ui/BrandLogo'
 import { EntityArt } from '@shared/ui/illustrations/EntityArt'
+import { Photo } from '@shared/ui/Photo'
 import { Badge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { EntityBadge } from '@shared/ui/EntityBadge'
@@ -144,7 +145,11 @@ function AboutEntity({ entity, className = '' }) {
 
   return (
     <section className={`glass overflow-hidden rounded-3xl p-5 md:bg-white/80 ${className}`} aria-label={`About ${entity.name}`}>
-      <EntityArt entity={entity} className="-mx-5 -mt-5 mb-4 block h-auto w-[calc(100%+2.5rem)] max-w-none" />
+      {entity.theme?.photo_url ? (
+        <Photo src={entity.theme.photo_url} alt="" className="-mx-5 -mt-5 mb-4 aspect-[16/9] w-[calc(100%+2.5rem)] max-w-none" sizes="(min-width: 1024px) 360px, 100vw" />
+      ) : (
+        <EntityArt entity={entity} className="-mx-5 -mt-5 mb-4 block h-auto w-[calc(100%+2.5rem)] max-w-none" />
+      )}
       <div className="flex items-center gap-3">
         <EntityLogo entity={entity} size="md" />
         <div className="min-w-0">

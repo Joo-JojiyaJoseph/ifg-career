@@ -53,6 +53,7 @@ const emptyFilters = {
   department: '',
   level: '',
   source: '',
+  gender: '',
   referred: '',
   status: '',
   result: '',
@@ -390,6 +391,9 @@ function ApplicationFilters({ values, onChange, meta, entities }) {
       <FormField id="app-source" label="Source">
         <Select id="app-source" value={values.source} onChange={(source) => onChange({ source })} options={[{ value: '', label: 'All sources' }, ...asList(enums.application_sources).map((item) => ({ value: item.value, label: item.label }))]} />
       </FormField>
+      <FormField id="app-gender" label="Gender">
+        <Select id="app-gender" value={values.gender} onChange={(gender) => onChange({ gender })} options={[{ value: '', label: 'All' }, ...asList(enums.genders).map((item) => ({ value: item.value, label: item.label }))]} />
+      </FormField>
       <FormField id="app-status" label="Status">
         <Select id="app-status" value={values.status} onChange={(status) => onChange({ status })} options={[{ value: '', label: 'All statuses' }, ...asList(enums.application_statuses).map((item) => ({ value: item.value, label: item.label }))]} />
       </FormField>
@@ -498,6 +502,7 @@ function buildChips(filters, meta, entities, update) {
   if (filters.job) chips.push({ key: 'job', label: filters.job, onRemove: () => remove('job') })
   if (filters.status) chips.push({ key: 'status', label: label('application_statuses', filters.status), onRemove: () => remove('status') })
   if (filters.source) chips.push({ key: 'source', label: label('application_sources', filters.source), onRemove: () => remove('source') })
+  if (filters.gender) chips.push({ key: 'gender', label: label('genders', filters.gender), onRemove: () => remove('gender') })
   if (filters.flagged === '1') chips.push({ key: 'flagged', label: 'Flagged', onRemove: () => remove('flagged') })
   if (filters.referred === '1') chips.push({ key: 'referred', label: 'Referred', onRemove: () => remove('referred') })
   return chips

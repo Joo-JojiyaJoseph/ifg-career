@@ -6,7 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { client, ensureCsrf } from '@shared/api/createClient'
 import { applyApiErrors, focusFirstError, toFormData } from '@shared/lib/formErrors'
 import { useUnsavedChanges } from '@shared/hooks/useUnsavedChanges'
-import { jobApplySchema } from '@shared/validation/candidate'
+import { jobApplySchema, GENDER_OPTIONS } from '@shared/validation/candidate'
 import { Button } from '@shared/ui/Button'
 import { Card } from '@shared/ui/Card'
 import { Checkbox, Input } from '@shared/ui/Input'
@@ -21,11 +21,6 @@ import { useCandidateAuth } from '../auth/AuthProvider'
 import { startGoogleSignIn } from '../auth/api'
 import { fetchPublicJob, publicIdFromParam } from './api'
 
-const genders = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-]
 
 export function ApplyPage() {
   const { jobRef } = useParams()
@@ -134,7 +129,7 @@ function ApplyForm({ job, candidate, src }) {
           <FormField id="gender" label="Gender" required error={form.formState.errors.gender?.message}>
             {({ describedBy }) => (
               <Controller control={form.control} name="gender" render={({ field }) => (
-                <Select id="gender" value={field.value} onChange={field.onChange} options={genders} placeholder="Choose" invalid={Boolean(form.formState.errors.gender)} describedBy={describedBy} />
+                <Select id="gender" value={field.value} onChange={field.onChange} options={GENDER_OPTIONS} placeholder="Choose" invalid={Boolean(form.formState.errors.gender)} describedBy={describedBy} />
               )} />
             )}
           </FormField>

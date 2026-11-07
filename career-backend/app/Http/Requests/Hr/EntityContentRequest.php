@@ -25,6 +25,7 @@ class EntityContentRequest extends FormRequest
             'website_url' => ['sometimes', 'nullable', 'url:https,http', 'max:255'],
             'logo' => ['nullable', 'file', 'mimes:png,webp,svg', 'max:2048', new VirusFree],
             'pattern' => ['nullable', 'file', 'mimes:svg,png,webp', 'max:2048', new VirusFree],
+            'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:4096', new VirusFree],
         ];
     }
 

@@ -13,15 +13,15 @@ import { fetchEntityContent, fetchSettings } from './api'
 
 const careersUrl = import.meta.env.VITE_CAREERS_URL || 'http://localhost:5173'
 
+/** One tab per section of the careers page, in the order visitors see them. */
 const tabs = [
-  { id: 'banner', label: 'Banner & numbers' },
-  { id: 'entities', label: 'Our entities' },
-  { id: 'about', label: 'About the group' },
-  { id: 'interview', label: 'Interview process' },
-  { id: 'life', label: 'Life at the group' },
-  { id: 'quick-apply', label: 'Quick apply' },
-  { id: 'faqs', label: 'FAQs' },
-  { id: 'footer', label: 'Recognitions & footer' },
+  { id: 'banner', label: '1 · Opening banner' },
+  { id: 'entities', label: '2 · Our companies' },
+  { id: 'about', label: '3 · A place to belong' },
+  { id: 'interview', label: '4 · Interview procedure' },
+  { id: 'quick-apply', label: '5 · Quick apply' },
+  { id: 'faqs', label: '6 · FAQs' },
+  { id: 'footer', label: '7 · Footer' },
 ]
 
 export function ContentPage() {
@@ -36,7 +36,7 @@ export function ContentPage() {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Website Content"
-        subtitle="Everything on the careers landing page. Changes go live straight away."
+        subtitle="Every section of the careers page, in the order visitors see it. Changes go live straight away."
         actions={
           <a href={careersUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-600 bg-white px-5 text-sm font-medium text-brand-700 hover:bg-brand-50">
             View careers site <ArrowTopRightOnSquareIcon className="h-5 w-5" aria-hidden="true" />
@@ -55,28 +55,43 @@ export function ContentPage() {
               <SettingForm settingKey="promo_card" value={values.promo_card} />
             </>
           ) : null}
-          {tab === 'entities' ? (entities.isLoading ? <Skeleton className="h-64" /> : <EntitiesEditor entities={entities.data ?? []} />) : null}
+          {tab === 'entities' ? (
+            <>
+              <SettingForm settingKey="entities_section" value={values.entities_section} />
+              {entities.isLoading ? <Skeleton className="h-64" /> : null}
+              {entities.isError ? <ErrorState onRetry={() => entities.refetch()} /> : null}
+              {entities.data ? <EntitiesEditor entities={entities.data} /> : null}
+            </>
+          ) : null}
           {tab === 'about' ? (
             <>
               <SettingForm settingKey="about_intro" value={values.about_intro} />
               <ListEditor type="about-blocks" />
-            </>
-          ) : null}
-          {tab === 'interview' ? <ListEditor type="interview-steps" /> : null}
-          {tab === 'life' ? (
-            <>
-              <ListEditor type="employee-stories" entities={entities.data ?? []} />
-              <ListEditor type="recruitment-drives" />
               <ListEditor type="media-items" />
             </>
           ) : null}
-          {tab === 'quick-apply' ? <SettingForm settingKey="quick_apply_confirmation_text" value={values.quick_apply_confirmation_text} /> : null}
-          {tab === 'faqs' ? <ListEditor type="faqs" /> : null}
+          {tab === 'interview' ? (
+            <>
+              <SettingForm settingKey="interview_section" value={values.interview_section} />
+              <ListEditor type="interview-steps" />
+            </>
+          ) : null}
+          {tab === 'quick-apply' ? (
+            <>
+              <SettingForm settingKey="quick_apply_section" value={values.quick_apply_section} />
+              <SettingForm settingKey="quick_apply_confirmation_text" value={values.quick_apply_confirmation_text} />
+            </>
+          ) : null}
+          {tab === 'faqs' ? (
+            <>
+              <SettingForm settingKey="faq_section" value={values.faq_section} />
+              <ListEditor type="faqs" />
+            </>
+          ) : null}
           {tab === 'footer' ? (
             <>
-              <ListEditor type="recognitions" />
-              <SocialLinksForm links={values.social_links?.links ?? []} />
               <SettingForm settingKey="footer" value={values.footer} />
+              <SocialLinksForm links={values.social_links?.links ?? []} />
             </>
           ) : null}
         </div>

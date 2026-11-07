@@ -36,11 +36,19 @@ const optionalUrl = (message) => z.union([z.literal(''), z.url(message)]).option
 const requiredNumber = (emptyMessage, negativeMessage) =>
   z.any().refine((value) => typeof value === 'number' && !Number.isNaN(value), emptyMessage).refine((value) => typeof value === 'number' && value >= 0, negativeMessage)
 
+/** Gender choices on candidate forms, matching the API's Gender enum. */
+export const GENDER_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+]
+
 export const quickApplySchema = z.object({
   name: z.string().min(1, 'Enter your full name.').min(2, 'Use at least 2 characters.').max(100, 'Use at most 100 characters.'),
   date_of_birth: dateOfBirth,
   email: z.email('Enter a valid email address.'),
   phone,
+  gender: z.string().min(1, 'Choose a gender.'),
   highest_qualification: z.string().min(1, 'Enter your highest qualification.'),
   location: z.string().min(1, 'Enter your city or town.'),
   department_id: z.string().min(1, 'Choose a department.'),

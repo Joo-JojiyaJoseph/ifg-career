@@ -111,8 +111,8 @@ class ContentController extends Controller
     {
         $entity = Entity::query()->where('slug', $slug)->firstOrFail();
         $this->authorize('update', $entity);
-        $data = collect($request->validated())->except(['logo', 'pattern'])->all();
-        $entity = $content->saveEntity($entity, $data, $request->file('logo'), $request->file('pattern'));
+        $data = collect($request->validated())->except(['logo', 'pattern', 'photo'])->all();
+        $entity = $content->saveEntity($entity, $data, $request->file('logo'), $request->file('pattern'), $request->file('photo'));
 
         return response()->json(['data' => ['slug' => $entity->slug, 'theme' => $entity->theme]]);
     }

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiUrl, client, ensureCsrf } from '@shared/api/createClient'
 import { applyApiErrors, focusFirstError, toFormData } from '@shared/lib/formErrors'
-import { profileSchema } from '@shared/validation/candidate'
+import { profileSchema, GENDER_OPTIONS } from '@shared/validation/candidate'
 import { Button } from '@shared/ui/Button'
 import { Card } from '@shared/ui/Card'
 import { FileUpload } from '@shared/ui/FileUpload'
@@ -20,11 +20,6 @@ import { useToast } from '@shared/ui/Toast'
 import { useCandidateAuth } from '../features/auth/AuthProvider'
 import { fetchPublicMeta } from '../features/jobs/api'
 
-const genders = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-]
 
 
 export function ProfilePage() {
@@ -159,7 +154,7 @@ export function ProfilePage() {
           <FormField id="gender" label="Gender" required error={form.formState.errors.gender?.message}>
             {({ describedBy }) => (
               <Controller control={form.control} name="gender" render={({ field }) => (
-                <Select id="gender" value={field.value} onChange={field.onChange} options={genders} placeholder="Choose" invalid={Boolean(form.formState.errors.gender)} describedBy={describedBy} />
+                <Select id="gender" value={field.value} onChange={field.onChange} options={GENDER_OPTIONS} placeholder="Choose" invalid={Boolean(form.formState.errors.gender)} describedBy={describedBy} />
               )} />
             )}
           </FormField>

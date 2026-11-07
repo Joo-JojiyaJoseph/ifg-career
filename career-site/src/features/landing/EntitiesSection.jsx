@@ -1,119 +1,72 @@
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { EntityLogo } from '@shared/ui/BrandLogo'
-import { EntityArt } from '@shared/ui/illustrations/EntityArt'
-import { Reveal, Stagger, StaggerItem } from '@shared/ui/Motion'
-import { GROUP } from '@shared/brand'
-import { useSpotlight } from '@shared/hooks/useSpotlight'
+import { Stagger, StaggerItem } from '@shared/ui/Motion'
+import { Photo } from '@shared/ui/Photo'
 import { heroJobsQuery } from '../jobs/api'
 import { SectionHeading } from './SectionHeading'
 
-const story = [
-  { year: '2016', text: 'Kerala’s first data labeling team, six people in Mannarkkad.' },
-  { year: 'Today', text: 'Around 1,000 people across four companies.' },
-]
-
 /**
- * Section 3: a slim group-story banner, then one calm card per entity in its own colours.
- * Each card says what the company does, how many roles are open, and links to its website.
+ * Section 2: "Our story has more than one way in". One tall photo card per company with a frosted panel
+ * holding its name, what it does, a line about working there, and "Explore Opportunities".
  */
-export function EntitiesSection({ entities }) {
-  const spot = useSpotlight()
+export function EntitiesSection({ entities, section }) {
   const jobs = useQuery(heroJobsQuery)
   const perEntity = jobs.data?.counts?.entity ?? {}
 
   if (!entities.length) return null
 
   return (
-    <section className="bg-white py-20 md:py-28" aria-labelledby="entities-title">
-      <div className="mx-auto max-w-5xl px-4">
-        <SectionHeading id="entities-title" eyebrow="One group, four companies" title="Our entities" intro="Every open role across the group is listed on this careers site." />
+    <section id="entities" className="relative isolate scroll-mt-16 overflow-hidden bg-brand-50 py-20 md:py-28" aria-labelledby="entities-title">
+      <div className="pointer-events-none absolute -right-40 top-10 -z-10 h-[28rem] w-[28rem] rounded-full bg-cyan/25 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -left-40 bottom-0 -z-10 h-[24rem] w-[24rem] rounded-full bg-violet/20 blur-3xl" aria-hidden="true" />
+      <div className="mx-auto max-w-6xl px-4 2xl:max-w-7xl">
+        <SectionHeading id="entities-title" title={section?.title ?? 'Our story has more than one way in'} intro={section?.intro ?? undefined} />
 
-        <Reveal className="relative isolate mb-6 overflow-hidden rounded-3xl bg-ink px-6 py-6 text-white sm:px-8">
-          <div className="pointer-events-none absolute -right-10 -top-20 -z-10 h-56 w-56 rounded-full bg-brand-500/40 blur-3xl" aria-hidden="true" />
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-cyan-200">{GROUP.tagline}</p>
-              <p className="mt-1 font-display text-xl font-semibold tracking-tight">From six people to a thousand</p>
-            </div>
-            <ol className="flex flex-col gap-4 sm:flex-row sm:gap-10">
-              {story.map((item) => (
-                <li key={item.year} className="max-w-[15rem]">
-                  <p className="font-display text-sm font-semibold text-cyan-200">{item.year}</p>
-                  <p className="mt-0.5 text-sm leading-relaxed text-white/70">{item.text}</p>
-                </li>
-              ))}
-            </ol>
-            <a
-              href={GROUP.website}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-full border border-white/20 px-4 text-sm font-medium transition duration-200 hover:bg-white hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-white md:self-center"
-            >
-              infolksgroup.com <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only">(opens in a new tab)</span>
-            </a>
-          </div>
-        </Reveal>
-
-        <Stagger className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Stagger as="ul" className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {entities.map((entity) => {
-            const primary = entity.theme?.primary ?? '#1976D2'
-            const accent = entity.theme?.accent ?? '#29B6F6'
             const open = perEntity[entity.slug] ?? 0
-            const host = entity.website_url ? entity.website_url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
-
+            const tint = entity.theme?.primary ?? '#1976D2'
             return (
-              <StaggerItem key={entity.slug} className="h-full">
+              <StaggerItem as="li" key={entity.slug} className="h-full">
                 <article
-                  className="group relative isolate h-full overflow-hidden rounded-3xl bg-border/80 p-px transition duration-300 hover:-translate-y-1 hover:shadow-lift"
-                  style={{ '--entity-primary': primary, '--entity-accent': accent }}
+                  className="group relative isolate flex h-full min-h-[30rem] flex-col justify-end overflow-hidden rounded-[2rem] text-white shadow-lift transition duration-300 hover:-translate-y-1.5"
+                  style={{ '--tint': tint }}
                 >
-                  <span
-                    className="pointer-events-none absolute left-1/2 top-1/2 -z-10 aspect-square w-[160%] -translate-x-1/2 -translate-y-1/2 bg-[conic-gradient(from_0deg,transparent_0deg,var(--entity-accent)_70deg,var(--entity-primary)_140deg,transparent_200deg)] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 motion-safe:animate-border-spin"
-                    aria-hidden="true"
+                  <Photo
+                    src={entity.theme?.photo_url}
+                    alt=""
+                    className="!absolute inset-0 -z-10"
+                    imgClassName="transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+                    sizes="(min-width: 1280px) 300px, (min-width: 640px) 50vw, 100vw"
                   />
-                  <div
-                    {...spot}
-                    className="spotlight flex h-full flex-col rounded-[calc(1.5rem-1px)] bg-white p-7 sm:p-8"
-                    style={{ '--spot-color': `color-mix(in srgb, ${primary} 10%, transparent)` }}
-                  >
-                    <div className="-mx-3 -mt-3 mb-6 overflow-hidden rounded-2xl sm:-mx-4 sm:-mt-4">
-                      <EntityArt entity={entity} className="block h-auto w-full transition duration-500 group-hover:scale-[1.03]" />
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <EntityLogo entity={entity} size="lg" />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent" aria-hidden="true" />
+                  {open ? (
+                    <span className="glass-ink absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-semibold">
+                      {open} open {open === 1 ? 'role' : 'roles'}
+                    </span>
+                  ) : null}
+
+                  <div className="glass-ink m-3 flex flex-col rounded-[1.5rem] p-5">
+                    <div className="flex items-start gap-3">
+                      <EntityLogo entity={entity} size="sm" className="!rounded-xl !bg-white" />
                       <div className="min-w-0">
-                        <h3 className="font-display text-xl font-semibold text-ink">{entity.name}</h3>
-                        {entity.motto ? <p className="text-sm font-medium text-[var(--entity-primary)]">{entity.motto}</p> : null}
+                        <h3 className="font-display text-xl font-semibold leading-tight">{entity.name}</h3>
+                        {entity.motto ? <p className="mt-0.5 text-sm font-medium leading-snug text-[color-mix(in_srgb,var(--tint)_30%,white)]">{entity.motto}</p> : null}
                       </div>
                     </div>
-                    {entity.description ? <p className="mt-5 flex-1 leading-relaxed text-muted">{entity.description}</p> : <span className="flex-1" />}
-                    <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-5">
-                      <Link
-                        to={`/jobs?entity=${entity.slug}`}
-                        viewTransition
-                        className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold text-[var(--entity-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--entity-primary)]"
-                        aria-label={`View roles at ${entity.name}`}
-                      >
-                        {open ? `View ${open} open ${open === 1 ? 'role' : 'roles'}` : 'View roles'}
-                        <ArrowRightIcon className="h-4 w-4 transition duration-200 group-hover:translate-x-1" aria-hidden="true" />
-                      </Link>
-                      {host ? (
-                        <a
-                          href={entity.website_url}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="inline-flex min-h-11 items-center gap-1.5 rounded-full text-sm text-muted transition duration-200 hover:text-[var(--entity-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--entity-primary)]"
-                        >
-                          {host}
-                          <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
-                          <span className="sr-only">(opens {entity.name} website in a new tab)</span>
-                        </a>
-                      ) : null}
-                    </div>
+                    {entity.description ? <p className="mt-4 text-sm leading-relaxed text-white/80">{entity.description}</p> : null}
+                    <Link
+                      to={`/jobs?entity=${entity.slug}`}
+                      viewTransition
+                      aria-label={`Explore opportunities at ${entity.name}`}
+                      className="mt-5 inline-flex min-h-11 items-center justify-between gap-2 rounded-full bg-white px-5 text-sm font-semibold text-ink transition duration-200 hover:bg-[color-mix(in_srgb,var(--tint)_12%,white)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+                    >
+                      Explore Opportunities
+                      <ArrowRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
+                    </Link>
                   </div>
                 </article>
               </StaggerItem>
@@ -125,4 +78,7 @@ export function EntitiesSection({ entities }) {
   )
 }
 
-EntitiesSection.propTypes = { entities: PropTypes.array.isRequired }
+EntitiesSection.propTypes = {
+  entities: PropTypes.array.isRequired,
+  section: PropTypes.shape({ title: PropTypes.string, intro: PropTypes.string }),
+}

@@ -6,6 +6,7 @@ import PropTypes from 'prop-types'
 import { Aurora } from '@shared/ui/Aurora'
 import { EntityLogo } from '@shared/ui/BrandLogo'
 import { EntityArt } from '@shared/ui/illustrations/EntityArt'
+import { Photo } from '@shared/ui/Photo'
 import { WordReveal } from '@shared/ui/WordReveal'
 import { Button } from '@shared/ui/Button'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -102,10 +103,10 @@ export function JobSearchPage() {
           {entities.data?.length >= 2 ? (
             <div className="pointer-events-none absolute right-4 top-8 hidden w-80 lg:block" aria-hidden="true">
               <div className="absolute right-24 top-6 w-56 -rotate-6"><div className="glass-dark rounded-3xl border p-1.5 motion-safe:animate-float-slow">
-                <EntityArt entity={entities.data[0]} index={0} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />
+                {entities.data[0].theme?.photo_url ? <Photo src={entities.data[0].theme.photo_url} className="aspect-[4/3] rounded-[1.2rem]" sizes="224px" /> : <EntityArt entity={entities.data[0]} index={0} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />}
               </div></div>
               <div className="absolute right-0 top-20 w-56 rotate-3"><div className="glass-dark rounded-3xl border p-1.5 motion-safe:animate-float-slow [animation-delay:-3s]">
-                <EntityArt entity={entities.data[1]} index={1} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />
+                {entities.data[1].theme?.photo_url ? <Photo src={entities.data[1].theme.photo_url} className="aspect-[4/3] rounded-[1.2rem]" sizes="224px" /> : <EntityArt entity={entities.data[1]} index={1} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />}
               </div></div>
             </div>
           ) : null}

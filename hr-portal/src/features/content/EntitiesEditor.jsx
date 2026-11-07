@@ -16,7 +16,7 @@ const colours = [
 ]
 
 /**
- * The four entity cards: motto, description, theme colours, logo and pattern.
+ * The four company cards on the careers page: tagline, a line about working there, photo, colours, logo and pattern.
  */
 export function EntitiesEditor({ entities = [] }) {
   return (
@@ -31,13 +31,13 @@ function EntityCardForm({ entity }) {
   const queryClient = useQueryClient()
   const [values, setValues] = useState(entity)
   const [source, setSource] = useState(entity)
-  const [files, setFiles] = useState({ logo: null, pattern: null })
+  const [files, setFiles] = useState({ logo: null, pattern: null, photo: null })
   const [errors, setErrors] = useState({})
 
   if (entity !== source) {
     setSource(entity)
     setValues(entity)
-    setFiles({ logo: null, pattern: null })
+    setFiles({ logo: null, pattern: null, photo: null })
   }
 
   const save = useMutation({
@@ -50,12 +50,14 @@ function EntityCardForm({ entity }) {
       website_url: values.website_url ?? '',
       ...(files.logo ? { logo: files.logo } : {}),
       ...(files.pattern ? { pattern: files.pattern } : {}),
+      ...(files.photo ? { photo: files.photo } : {}),
     }),
     onSuccess: () => {
       toast.push({ tone: 'success', message: `${entity.name} saved` })
       setErrors({})
       queryClient.invalidateQueries({ queryKey: ['hr-content', 'entities'] })
       queryClient.invalidateQueries({ queryKey: ['public-entities'] })
+      setFiles({ logo: null, pattern: null, photo: null })
     },
     onError: (error) => {
       setErrors(Object.fromEntries(Object.entries(error.errors ?? {}).map(([key, value]) => [key, value[0]])))
@@ -68,10 +70,13 @@ function EntityCardForm({ entity }) {
   return (
     <Card className="flex flex-col gap-4 border-t-4" style={{ borderTopColor: values.primary_color }}>
       <h2 className="font-display text-lg font-semibold text-navy">{entity.name}</h2>
-      <FormField id={`${entity.slug}-motto`} label="Motto" error={errors.motto}>
+      <FormField id={`${entity.slug}-photo`} label="Card photo" error={errors.photo}>
+        <ImageField id={`${entity.slug}-photo`} currentUrl={entity.theme?.photo_url} file={files.photo} onChange={(photo) => setFiles((current) => ({ ...current, photo }))} hint="Shown behind the company's card. A landscape photo of the team, at least 1200px wide. JPG, PNG or WebP." />
+      </FormField>
+      <FormField id={`${entity.slug}-motto`} label="Tagline" hint="What the company does, for example “AI Data Annotation Company”." error={errors.motto}>
         <Input id={`${entity.slug}-motto`} maxLength={150} value={values.motto ?? ''} onChange={set('motto')} />
       </FormField>
-      <FormField id={`${entity.slug}-description`} label="Short description" hint="2 to 3 lines." error={errors.short_description}>
+      <FormField id={`${entity.slug}-description`} label="Line about working here" hint="One or two sentences shown on the card." error={errors.short_description}>
         <Textarea id={`${entity.slug}-description`} rows={3} maxLength={400} value={values.short_description ?? ''} onChange={set('short_description')} />
       </FormField>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

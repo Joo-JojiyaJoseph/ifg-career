@@ -2,13 +2,14 @@ import { useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import PropTypes from 'prop-types'
+import { m } from 'framer-motion'
 import { CheckCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline'
 import { client, ensureCsrf } from '@shared/api/createClient'
 import { applyApiErrors, focusFirstError, toFormData } from '@shared/lib/formErrors'
 import { TurnstileField } from '@shared/hooks/useTurnstile.jsx'
-import { quickApplySchema, talentSignupSchema } from '@shared/validation/candidate'
+import { GENDER_OPTIONS, quickApplySchema } from '@shared/validation/candidate'
 import { Aurora } from '@shared/ui/Aurora'
 import { Button } from '@shared/ui/Button'
 import { Card } from '@shared/ui/Card'
@@ -21,38 +22,62 @@ import { Input } from '@shared/ui/Input'
 import { PhoneInput } from '@shared/ui/PhoneInput'
 import { Select } from '@shared/ui/Select'
 import { useToast } from '@shared/ui/Toast'
-import { PaperPlaneIllustration } from '@shared/ui/illustrations/PaperPlane'
+import { Photo } from '@shared/ui/Photo'
+import { usePrefersReducedMotion } from '@shared/ui/motionPresets'
 import { Reveal } from '@shared/ui/Motion'
 import { fetchPublicMeta } from '../jobs/api'
+import { startGoogleSignIn } from '../auth/api'
 
-export function QuickApplySection() {
+/**
+ * Section 5: "Your story could begin here". The intro and a photo on the left, the Quick Apply form on a frosted card.
+ * The thank-you message after sending comes from Website Content.
+ */
+export function QuickApplySection({ section, confirmation }) {
+  const reduced = usePrefersReducedMotion()
+  const paragraphs = String(section?.intro ?? '').split(/\n\s*\n/).map((text) => text.trim()).filter(Boolean)
+
   return (
-    <section id="quick-apply" className="relative isolate scroll-mt-20 overflow-hidden bg-gradient-to-br from-brand-900 via-brand-700 to-ink py-20 md:py-28" aria-label="Quick apply and talent community">
+    <section id="quick-apply" className="relative isolate scroll-mt-20 overflow-hidden bg-gradient-to-br from-brand-900 via-brand-700 to-ink py-20 md:py-28" aria-labelledby="quick-apply-title">
       <Aurora tone="dark" />
-      <div className="mx-auto max-w-5xl px-4">
-        <Reveal className="mx-auto mb-12 flex max-w-2xl flex-col items-center text-center text-white">
-          <PaperPlaneIllustration className="h-24 w-36 motion-safe:animate-float-slow" />
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">Two minutes, no sign-in</p>
-          <p className="mt-3 font-display text-3xl font-semibold tracking-tight md:text-[2.6rem] md:leading-[1.12]">Not sure which role fits?</p>
-          <p className="mt-4 text-white/70 md:text-lg">Send your resume once and the right hiring team will find you.</p>
-        </Reveal>
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <QuickApplyForm />
-          <div className="flex flex-col gap-4">
-            <TalentSignupForm />
-            <p className="flex items-start gap-2 px-2 text-sm text-white/65">
-              <ShieldCheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" aria-hidden="true" />
-              Your resume is stored privately and only the hiring team can open it.
-            </p>
-          </div>
+      <div className="mx-auto grid max-w-6xl items-start gap-10 px-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-14 2xl:max-w-7xl">
+        <div className="text-white lg:sticky lg:top-24">
+          <Reveal>
+            <h2 id="quick-apply-title" className="font-display text-[clamp(2rem,2.8vw+1rem,3.25rem)] font-semibold leading-[1.05] tracking-tight">
+              {section?.title ?? 'Your story could begin here'}
+            </h2>
+            {paragraphs.map((text, index) => (
+              <p key={index} className={`mt-5 leading-relaxed ${index ? 'text-white/70' : 'font-display text-xl text-cyan-100'}`}>{text}</p>
+            ))}
+          </Reveal>
+          {section?.image ? (
+            <m.figure
+              className="relative mt-10 hidden sm:block"
+              {...(reduced ? {} : { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, amount: 0.3 }, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } })}
+            >
+              <div className="glass-dark rounded-[2rem] p-2">
+                <Photo src={section.image} alt="" className="aspect-[4/3] rounded-[1.6rem]" sizes="(min-width: 1024px) 420px, 90vw" />
+              </div>
+              <figcaption className="glass-dark absolute -bottom-5 right-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm motion-safe:animate-float-slow">
+                <ShieldCheckIcon className="h-5 w-5 shrink-0 text-cyan-200" aria-hidden="true" />
+                <span>Your resume is stored privately and only our HR team can open it.</span>
+              </figcaption>
+            </m.figure>
+          ) : null}
         </div>
+        <QuickApplyForm confirmation={confirmation} />
       </div>
     </section>
   )
 }
 
-function QuickApplyForm() {
+QuickApplySection.propTypes = {
+  section: PropTypes.shape({ title: PropTypes.string, intro: PropTypes.string, image: PropTypes.string }),
+  confirmation: PropTypes.shape({ title: PropTypes.string, body: PropTypes.string }),
+}
+
+function QuickApplyForm({ confirmation }) {
   const toast = useToast()
+  const queryClient = useQueryClient()
   const getToken = useRef(async () => '')
   const rememberToken = useCallback((fn) => {
     getToken.current = fn
@@ -65,6 +90,7 @@ function QuickApplyForm() {
       date_of_birth: '',
       email: '',
       phone: '',
+      gender: '',
       highest_qualification: '',
       location: '',
       department_id: '',
@@ -87,19 +113,34 @@ function QuickApplyForm() {
     },
     onSuccess: (data) => {
       toast.push({ tone: 'success', message: data.confirmation })
+      // A first-time candidate is now signed in: refresh the header so Candidate profile shows their name.
+      if (data.signed_in) queryClient.invalidateQueries({ queryKey: ['candidate', 'me'] })
     },
     onError: (error) => applyApiErrors(error, form.setError),
   })
 
   if (mutation.data) {
     return (
-      <Card variant="frost" className="p-6 sm:p-8">
-        <div className="flex flex-col items-start gap-3">
-          <CheckCircleIcon className="h-10 w-10 text-success" aria-hidden="true" />
-          <h2 className="font-display text-2xl text-navy">Application received</h2>
-          <p className="text-text">{mutation.data.confirmation}</p>
-          {mutation.data.profile_notice ? <p className="text-sm text-brand-700">{mutation.data.profile_notice}</p> : null}
-        </div>
+      <Card variant="frost" className="p-6 sm:p-10" role="status">
+        <m.div className="flex flex-col items-start gap-4" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: 'easeOut' }}>
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal text-white shadow-glow">
+            <CheckCircleIcon className="h-8 w-8" aria-hidden="true" />
+          </span>
+          <h3 className="font-display text-2xl font-semibold text-ink sm:text-3xl">{confirmation?.title || 'Thank you for sharing your profile with us!'}</h3>
+          <p className="max-w-lg text-text">{confirmation?.body || mutation.data.confirmation}</p>
+          {mutation.data.signed_in ? (
+            <div className="flex flex-col gap-3 rounded-2xl bg-brand-50 p-4 text-sm text-navy sm:flex-row sm:items-center sm:justify-between">
+              <p>You are now signed in. Follow the status of your application in your Candidate profile.</p>
+              <Link to="/my-applications" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-brand-600 px-5 font-semibold text-white transition duration-200 hover:bg-brand-700">Candidate profile</Link>
+            </div>
+          ) : null}
+          {mutation.data.profile_notice ? (
+            <div className="flex flex-col gap-3 rounded-2xl bg-brand-50 p-4 text-sm text-navy sm:flex-row sm:items-center sm:justify-between">
+              <p>{mutation.data.profile_notice}</p>
+              <Button variant="secondary" className="shrink-0" onClick={() => startGoogleSignIn('/my-applications')}>Sign in with Google</Button>
+            </div>
+          ) : null}
+        </m.div>
       </Card>
     )
   }
@@ -111,8 +152,8 @@ function QuickApplyForm() {
 
   return (
     <Card variant="frost" className="p-6 sm:p-8">
-      <h2 className="font-display text-2xl font-semibold text-ink">Quick apply</h2>
-      <p className="mt-1 text-sm text-muted">Apply without choosing a role. Infolks Group will keep your details for the department you pick.</p>
+      <h3 className="font-display text-2xl font-semibold text-ink">Quick Apply</h3>
+      <p className="mt-1 text-sm text-muted">No sign-in and no specific vacancy needed.</p>
       <form
         className="mt-7 grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2"
         onSubmit={form.handleSubmit((values) => mutation.mutate(values), focusFirstError)}
@@ -151,13 +192,24 @@ function QuickApplyForm() {
             />
           )}
         </FormField>
+        <FormField id="gender" label="Gender" required error={form.formState.errors.gender?.message}>
+          {({ describedBy }) => (
+            <Controller
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <Select id="gender" value={field.value} onChange={field.onChange} options={GENDER_OPTIONS} placeholder="Choose" invalid={Boolean(form.formState.errors.gender)} describedBy={describedBy} />
+              )}
+            />
+          )}
+        </FormField>
         <FormField id="highest_qualification" label="Highest qualification" required error={form.formState.errors.highest_qualification?.message}>
           <Input id="highest_qualification" invalid={Boolean(form.formState.errors.highest_qualification)} {...form.register('highest_qualification')} />
         </FormField>
         <FormField id="location" label="Location" required error={form.formState.errors.location?.message}>
           <Input id="location" placeholder="City or town" invalid={Boolean(form.formState.errors.location)} {...form.register('location')} />
         </FormField>
-        <div className="sm:col-span-2">
+        <div>
         <FormField id="department_id" label="Department" required error={form.formState.errors.department_id?.message}>
           {({ describedBy }) => (
             <Controller
@@ -171,7 +223,7 @@ function QuickApplyForm() {
         </FormField>
         </div>
         <div className="sm:col-span-2">
-        <FormField id="resume" label="Resume" required error={form.formState.errors.resume?.message}>
+        <FormField id="resume" label="Upload resume (PDF or DOCX)" required error={form.formState.errors.resume?.message}>
           {({ describedBy }) => (
             <Controller
               control={form.control}
@@ -197,67 +249,7 @@ function QuickApplyForm() {
   )
 }
 
-function TalentSignupForm() {
-  const toast = useToast()
-  const getToken = useRef(async () => '')
-  const rememberToken = useCallback((fn) => {
-    getToken.current = fn
-  }, [])
-  const form = useForm({
-    resolver: zodResolver(talentSignupSchema),
-    defaultValues: { name: '', email: '', phone: '', privacy_consent: false, company_website: '' },
-  })
-  const mutation = useMutation({
-    mutationFn: async (values) => {
-      const token = await getToken.current()
-      await ensureCsrf()
-      const { data } = await client.post('/api/v1/public/talent-community', {
-        ...values,
-        company_website: form.getValues('company_website') || '',
-        turnstile_token: token,
-      })
-      return data
-    },
-    onSuccess: (data) => toast.push({ tone: 'success', message: data.message }),
-    onError: (error) => applyApiErrors(error, form.setError, 'talent-'),
-  })
-
-  return (
-    <Card variant="frost" className="p-6">
-      <h2 className="font-display text-xl font-semibold text-ink">Join the talent community</h2>
-      <p className="mt-1 text-sm text-muted">Hear about new openings at Infolks Group. No sign-in needed.</p>
-      <form className="mt-6 flex flex-col gap-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values), (errors) => focusFirstError(errors, 'talent-'))} noValidate>
-        <Honeypot id="talent-company-website" register={form.register} />
-        <TurnstileField onToken={rememberToken} />
-        {mutation.data ? <p className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-navy" role="status">{mutation.data.message}</p> : null}
-        {mutation.error ? <p className="text-sm text-danger" role="alert">{mutation.error.message}</p> : null}
-        <FormField id="talent-name" label="Name" required error={form.formState.errors.name?.message}>
-          <Input id="talent-name" invalid={Boolean(form.formState.errors.name)} {...form.register('name')} />
-        </FormField>
-        <FormField id="talent-email" label="Email" required error={form.formState.errors.email?.message}>
-          <Input id="talent-email" type="email" invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
-        </FormField>
-        <FormField id="talent-phone" label="Phone" required error={form.formState.errors.phone?.message}>
-          {({ describedBy }) => (
-            <Controller
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <PhoneInput id="talent-phone" value={field.value} onChange={field.onChange} invalid={Boolean(form.formState.errors.phone)} describedBy={describedBy} />
-              )}
-            />
-          )}
-        </FormField>
-        <Checkbox
-          label={<>I agree to the <Link className="text-brand-700 underline" to="/privacy">privacy policy</Link>.</>}
-          {...form.register('privacy_consent')}
-        />
-        {form.formState.errors.privacy_consent ? <p className="text-sm text-danger" role="alert">{form.formState.errors.privacy_consent.message}</p> : null}
-        <Button type="submit" className="w-full" loading={mutation.isPending}>Join</Button>
-      </form>
-    </Card>
-  )
-}
+QuickApplyForm.propTypes = { confirmation: PropTypes.shape({ title: PropTypes.string, body: PropTypes.string }) }
 
 function Honeypot({ id, register }) {
   return (

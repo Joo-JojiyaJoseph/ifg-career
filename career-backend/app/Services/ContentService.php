@@ -26,11 +26,15 @@ class ContentService
 {
     /** Site setting keys HR can edit, with the fields each one holds. */
     public const SETTINGS = [
-        'hero' => ['motto', 'company_line', 'banner_image'],
+        'hero' => ['eyebrow', 'title', 'motto', 'company_line', 'banner_image'],
         'company_numbers' => ['employees', 'years', 'clients'],
+        'entities_section' => ['title', 'intro'],
         'about_intro' => ['title', 'intro'],
+        'interview_section' => ['eyebrow', 'title', 'image'],
+        'quick_apply_section' => ['title', 'intro', 'image'],
+        'faq_section' => ['title'],
         'social_links' => ['links'],
-        'footer' => ['copyright', 'contact_email', 'contact_phone', 'address', 'tagline'],
+        'footer' => ['closing_title', 'closing_text', 'copyright', 'contact_email', 'contact_phone', 'address', 'tagline'],
         'promo_card' => ['headline', 'tagline', 'image'],
         'quick_apply_confirmation_text' => ['title', 'body'],
     ];
@@ -145,7 +149,7 @@ class ContentService
 
         $imageField = match ($key) {
             'hero' => 'banner_image',
-            'promo_card' => 'image',
+            'promo_card', 'interview_section', 'quick_apply_section' => 'image',
             default => null,
         };
 
@@ -161,7 +165,7 @@ class ContentService
     /**
      * @param  array<string, mixed>  $data
      */
-    public function saveEntity(Entity $entity, array $data, ?UploadedFile $logo, ?UploadedFile $pattern): Entity
+    public function saveEntity(Entity $entity, array $data, ?UploadedFile $logo, ?UploadedFile $pattern, ?UploadedFile $photo = null): Entity
     {
         $entity->fill(array_intersect_key($data, array_flip(['motto', 'short_description', 'primary_color', 'secondary_color', 'accent_color', 'website_url'])))->save();
 
@@ -171,6 +175,10 @@ class ContentService
 
         if ($pattern) {
             $this->storeImage($pattern, $entity, 'pattern_path', 1600);
+        }
+
+        if ($photo) {
+            $this->storeImage($photo, $entity, 'photo_path', 1600);
         }
 
         CacheVersion::bump('content');
@@ -202,10 +210,13 @@ class ContentService
 
         return [
             'hero' => [
-                'motto' => $hero['motto'] ?? 'Grow your career with Infolks Group',
+                'eyebrow' => filled($hero['eyebrow'] ?? null) ? $hero['eyebrow'] : null,
+                'title' => filled($hero['title'] ?? null) ? $hero['title'] : 'Infolks Group',
+                'motto' => $hero['motto'] ?? 'A company with a heart',
                 'company_line' => $hero['company_line'] ?? null,
                 'banner_image' => $url($hero['banner_image'] ?? null),
             ],
+            'sections' => $this->sectionText($url),
             'company_numbers' => $numbers === [] ? null : array_map('intval', $numbers),
             'about' => [
                 'title' => $this->setting('about_intro')['title'] ?? 'About the group',
@@ -262,6 +273,40 @@ class ContentService
                 'website_url' => $entity->website_url,
                 'theme' => $entity->theme,
             ])->values()->all(),
+        ];
+    }
+
+    /**
+     * Headings, intros and photos for the landing page sections, with the career page copy as defaults.
+     *
+     * @param  callable(?string): ?string  $url
+     * @return array<string, array<string, mixed>>
+     */
+    private function sectionText(callable $url): array
+    {
+        $entities = $this->setting('entities_section');
+        $interview = $this->setting('interview_section');
+        $quickApply = $this->setting('quick_apply_section');
+        $faq = $this->setting('faq_section');
+
+        return [
+            'entities' => [
+                'title' => $entities['title'] ?? 'Our story has more than one way in',
+                'intro' => $entities['intro'] ?? null,
+            ],
+            'interview' => [
+                'eyebrow' => $interview['eyebrow'] ?? 'How we hire',
+                'title' => $interview['title'] ?? 'Our Recruitment Process',
+                'image' => $url($interview['image'] ?? null),
+            ],
+            'quick_apply' => [
+                'title' => $quickApply['title'] ?? 'Your story could begin here',
+                'intro' => $quickApply['intro'] ?? null,
+                'image' => $url($quickApply['image'] ?? null),
+            ],
+            'faq' => [
+                'title' => $faq['title'] ?? 'A few things you might want to know',
+            ],
         ];
     }
 

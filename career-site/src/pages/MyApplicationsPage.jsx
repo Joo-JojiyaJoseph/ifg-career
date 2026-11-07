@@ -9,7 +9,9 @@ import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { Pagination } from '@shared/ui/Pagination'
 import { Select } from '@shared/ui/Select'
+import { Button } from '@shared/ui/Button'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
+import { startGoogleSignIn } from '../features/auth/api'
 import { StatusBadge } from '@shared/ui/Badge'
 import { useCandidateAuth } from '../features/auth/AuthProvider'
 import { fetchEntities } from '../features/jobs/api'
@@ -51,7 +53,13 @@ export function MyApplicationsPage() {
   }
 
   if (!loading && !candidate) {
-    return <EmptyState title="Sign in to see your applications" description="Applications you send appear here after you sign in with Google." />
+    return (
+      <EmptyState
+        title="Sign in to see your applications"
+        description="Your Candidate profile shows the status of every application you have sent. Sign in with the Google account you applied with."
+        action={<Button onClick={() => startGoogleSignIn('/my-applications')}>Sign in with Google</Button>}
+      />
+    )
   }
 
   const entityOptions = [

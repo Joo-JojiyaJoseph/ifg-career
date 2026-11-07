@@ -34,6 +34,10 @@ class HrApplicationFilter
             $query->where('source', $filters['source']);
         }
 
+        if (! $skip('gender') && filled($filters['gender'] ?? null)) {
+            $query->whereHas('candidate', fn (Builder $candidates) => $candidates->where('gender', $filters['gender']));
+        }
+
         if (! $skip('result') && filled($filters['result'] ?? null)) {
             $query->where('result', $filters['result']);
         }

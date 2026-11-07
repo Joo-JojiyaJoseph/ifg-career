@@ -3,9 +3,9 @@
  */
 export const sections = {
   'about-blocks': {
-    title: 'About the group: blocks',
-    noun: 'block',
-    hint: 'Three blocks: How we work, What we provide, Our culture.',
+    title: 'The three numbered cards',
+    noun: 'card',
+    hint: 'How We Work, What We Provide and Our Culture, shown as 01, 02 and 03.',
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, max: 80 },
       { name: 'body', label: 'Text', type: 'textarea', required: true, max: 600 },
@@ -14,55 +14,29 @@ export const sections = {
     summary: (item) => ({ title: item.title, text: item.body, icon: item.heroicon_name }),
   },
   'interview-steps': {
-    title: 'Interview process',
+    title: 'Interview steps',
     noun: 'step',
-    hint: 'Shown in order as numbered steps on the landing page and every job page.',
+    hint: 'Shown in order as 01, 02, 03… on the careers page and every job page. The last step is highlighted.',
     fields: [
       { name: 'name', label: 'Step name', type: 'text', required: true, max: 80 },
       { name: 'description', label: 'Short description', type: 'textarea', required: true, max: 255 },
     ],
     summary: (item, index) => ({ title: `${index + 1}. ${item.name}`, text: item.description }),
   },
-  'employee-stories': {
-    title: 'Employee experiences',
-    noun: 'story',
-    hint: 'Only stories with the employee’s permission can be published.',
-    fields: [
-      { name: 'name', label: 'Employee name', type: 'text', required: true, max: 100 },
-      { name: 'role', label: 'Role', type: 'text', required: true, max: 100 },
-      { name: 'entity', label: 'Entity', type: 'entity' },
-      { name: 'quote', label: 'Quote or short story', type: 'textarea', required: true, max: 600 },
-      { name: 'image', label: 'Photo', type: 'image', hint: 'A square photo works best. JPG, PNG or WebP, up to 3 MB.' },
-      { name: 'publish_permission_confirmed', label: 'The employee agreed to publish this', type: 'switch' },
-    ],
-    summary: (item) => ({ title: item.name, text: `${item.role}${item.entity ? ` · ${item.entity.name}` : ''}`, image: item.image_url }),
-  },
-  'recruitment-drives': {
-    title: 'Recruitment drives',
-    noun: 'drive photo',
-    fields: [
-      { name: 'name', label: 'Drive name', type: 'text', required: true, max: 150 },
-      { name: 'drive_date', label: 'Date', type: 'date', required: true },
-      { name: 'caption', label: 'Caption', type: 'text', max: 255 },
-      { name: 'image', label: 'Photo', type: 'image', requiredOnCreate: true, hint: 'Landscape photos look best. Up to 3 MB.' },
-    ],
-    summary: (item) => ({ title: item.name, text: item.caption, image: item.image_url, date: item.drive_date }),
-  },
   'media-items': {
-    title: 'Videos and activities',
-    noun: 'item',
-    hint: 'Optional. The tab is hidden on the site when this list is empty.',
+    title: 'Culture photos',
+    noun: 'photo',
+    hint: 'Real photos of your people: festivals, football, trips, birthdays. The first four fill the mosaic in “A place to belong”, the first two also float in the opening banner, and the last one sits behind the footer message.',
     fields: [
-      { name: 'type', label: 'Type', type: 'select', required: true, options: [{ value: 'video', label: 'Video (YouTube)' }, { value: 'activity', label: 'Activity photo' }] },
-      { name: 'title', label: 'Title', type: 'text', required: true, max: 150 },
-      { name: 'youtube_url', label: 'YouTube link', type: 'text', showIf: (values) => values.type === 'video' },
-      { name: 'image', label: 'Photo', type: 'image', showIf: (values) => values.type === 'activity' },
-      { name: 'caption', label: 'Caption', type: 'text', max: 255 },
+      { name: 'type', type: 'hidden', value: 'activity' },
+      { name: 'title', label: 'Label on the photo', type: 'text', required: true, max: 150 },
+      { name: 'caption', label: 'Describe the photo', type: 'text', max: 255, hint: 'Read aloud by screen readers.' },
+      { name: 'image', label: 'Photo', type: 'image', requiredOnCreate: true, hint: 'Landscape or square, at least 1200px wide. JPG, PNG or WebP, up to 3 MB.' },
     ],
-    summary: (item) => ({ title: item.title, text: item.type === 'video' ? item.youtube_url : item.caption, image: item.image_url }),
+    summary: (item) => ({ title: item.title, text: item.caption, image: item.image_url }),
   },
   faqs: {
-    title: 'Frequently asked questions',
+    title: 'Questions and answers',
     noun: 'question',
     fields: [
       { name: 'question', label: 'Question', type: 'text', required: true, max: 255 },
@@ -70,26 +44,18 @@ export const sections = {
     ],
     summary: (item) => ({ title: item.question, html: item.answer }),
   },
-  recognitions: {
-    title: 'Recognitions and validations',
-    noun: 'badge',
-    fields: [
-      { name: 'name', label: 'Name', type: 'text', required: true, max: 150 },
-      { name: 'year', label: 'Year', type: 'number' },
-      { name: 'link', label: 'Link (optional)', type: 'text' },
-      { name: 'image', label: 'Badge image', type: 'image', requiredOnCreate: true, accept: 'image/png,image/webp,image/svg+xml,image/jpeg' },
-    ],
-    summary: (item) => ({ title: item.name, text: item.year ? String(item.year) : '', image: item.image_url }),
-  },
 }
 
 export const settingForms = {
   hero: {
     title: 'Opening banner',
+    hint: 'The first thing visitors see, over a full-width photo.',
     fields: [
-      { name: 'motto', label: 'Motto or key words', type: 'text', required: true, max: 120 },
-      { name: 'company_line', label: 'Short line about the company', type: 'textarea', max: 240 },
-      { name: 'image', label: 'Banner image', type: 'image', current: 'banner_image_url', hint: 'Wide image, at least 1600px. It is converted to WebP automatically.' },
+      { name: 'eyebrow', label: 'Small line above the name', type: 'text', max: 60, hint: 'For example “Be part of our heart”.' },
+      { name: 'title', label: 'Big headline', type: 'text', max: 60, hint: 'For example “Infolks Group”.' },
+      { name: 'motto', label: 'Tagline', type: 'text', required: true, max: 120 },
+      { name: 'company_line', label: 'Short description of the company', type: 'textarea', max: 240, hint: 'One or two sentences shown under the headline.' },
+      { name: 'image', label: 'Background photo', type: 'image', current: 'banner_image_url', hint: 'A wide, lively team photo, at least 2000px wide. It is converted to WebP automatically.' },
     ],
   },
   company_numbers: {
@@ -101,16 +67,45 @@ export const settingForms = {
       { name: 'clients', label: 'Clients served', type: 'number' },
     ],
   },
-  about_intro: {
-    title: 'About the group: introduction',
+  entities_section: {
+    title: 'Section heading',
     fields: [
-      { name: 'title', label: 'Section title', type: 'text', required: true, max: 80 },
-      { name: 'intro', label: 'Introduction', type: 'textarea', max: 600 },
+      { name: 'title', label: 'Heading', type: 'text', required: true, max: 80 },
+      { name: 'intro', label: 'Short introduction (optional)', type: 'textarea', max: 300 },
     ],
+  },
+  about_intro: {
+    title: 'Section heading',
+    fields: [
+      { name: 'title', label: 'Heading', type: 'text', required: true, max: 80 },
+      { name: 'intro', label: 'Introduction', type: 'textarea', max: 600, hint: 'Leave an empty line between paragraphs.' },
+    ],
+  },
+  interview_section: {
+    title: 'Section heading',
+    fields: [
+      { name: 'eyebrow', label: 'Small line above the heading', type: 'text', max: 60 },
+      { name: 'title', label: 'Heading', type: 'text', required: true, max: 80 },
+      { name: 'image', label: 'Background photo', type: 'image', current: 'image_url', hint: 'Shown dimmed behind the steps. Landscape, at least 1600px wide.' },
+    ],
+  },
+  quick_apply_section: {
+    title: 'Section heading',
+    fields: [
+      { name: 'title', label: 'Heading', type: 'text', required: true, max: 80 },
+      { name: 'intro', label: 'Introduction', type: 'textarea', max: 400, hint: 'Leave an empty line between paragraphs. The first paragraph is shown larger.' },
+      { name: 'image', label: 'Photo beside the form', type: 'image', current: 'image_url', hint: 'Landscape, at least 1200px wide.' },
+    ],
+  },
+  faq_section: {
+    title: 'Section heading',
+    fields: [{ name: 'title', label: 'Heading', type: 'text', required: true, max: 80 }],
   },
   footer: {
     title: 'Footer',
     fields: [
+      { name: 'closing_title', label: 'Closing heading', type: 'text', max: 80, hint: 'Optional. Leave empty to show only the message.' },
+      { name: 'closing_text', label: 'Closing message', type: 'textarea', max: 300 },
       { name: 'copyright', label: 'Copyright line', type: 'text', required: true, max: 150 },
       { name: 'contact_email', label: 'Contact email', type: 'text' },
       { name: 'contact_phone', label: 'Contact phone', type: 'text' },
@@ -119,7 +114,8 @@ export const settingForms = {
     ],
   },
   quick_apply_confirmation_text: {
-    title: 'Quick apply confirmation message',
+    title: 'Thank-you message',
+    hint: 'Shown after someone sends Quick Apply.',
     fields: [
       { name: 'title', label: 'Title', type: 'text', required: true, max: 80 },
       { name: 'body', label: 'Message', type: 'textarea', required: true, max: 400 },

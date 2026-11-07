@@ -91,6 +91,21 @@ const preset = {
           '0%': { transform: 'scale(0.9)', opacity: '0.7' },
           '100%': { transform: 'scale(1.6)', opacity: '0' },
         },
+        // Slow drift and zoom on full-bleed photos.
+        'ken-burns': {
+          '0%': { transform: 'scale(1.12) translate3d(-1.5%, -1%, 0)' },
+          '100%': { transform: 'scale(1) translate3d(0, 0, 0)' },
+        },
+        heartbeat: {
+          '0%, 40%, 100%': { transform: 'scale(1)' },
+          '10%, 30%': { transform: 'scale(1.18)' },
+          '20%': { transform: 'scale(0.96)' },
+        },
+        'scroll-cue': {
+          '0%': { transform: 'translateY(-4px)', opacity: '0' },
+          '40%': { opacity: '1' },
+          '100%': { transform: 'translateY(10px)', opacity: '0' },
+        },
       },
       animation: {
         float: 'float 16s ease-in-out infinite',
@@ -102,6 +117,9 @@ const preset = {
         shine: 'shine 0.9s ease-out',
         'border-spin': 'border-spin 8s linear infinite',
         'pulse-ring': 'pulse-ring 2.4s ease-out infinite',
+        'ken-burns': 'ken-burns 18s ease-out both',
+        heartbeat: 'heartbeat 2.2s ease-in-out infinite',
+        'scroll-cue': 'scroll-cue 1.8s ease-in-out infinite',
       },
     },
   },

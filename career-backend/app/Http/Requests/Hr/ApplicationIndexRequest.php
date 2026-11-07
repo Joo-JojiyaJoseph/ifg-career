@@ -6,6 +6,7 @@ use App\Enums\ApplicationResult;
 use App\Enums\ApplicationSource;
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
+use App\Enums\Gender;
 use App\Enums\JobLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,6 +38,7 @@ class ApplicationIndexRequest extends FormRequest
             'department' => ['nullable', 'integer'],
             'level' => ['nullable', Rule::enum(JobLevel::class)],
             'source' => ['nullable', Rule::enum(ApplicationSource::class)],
+            'gender' => ['nullable', Rule::enum(Gender::class)],
             'referred' => ['nullable', 'boolean'],
             'status' => ['nullable', Rule::enum(ApplicationStatus::class)],
             'result' => ['nullable', Rule::enum(ApplicationResult::class)],
@@ -65,6 +67,7 @@ class ApplicationIndexRequest extends FormRequest
             'department_id' => $this->validated('department'),
             'level' => $this->validated('level'),
             'source' => $this->validated('source'),
+            'gender' => $this->validated('gender'),
             'referred' => $this->validated('referred'),
             'status' => $this->validated('status'),
             'result' => $this->validated('result'),

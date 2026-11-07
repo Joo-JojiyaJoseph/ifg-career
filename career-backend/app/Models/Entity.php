@@ -25,6 +25,7 @@ class Entity extends Model
         'secondary_color',
         'accent_color',
         'pattern_path',
+        'photo_path',
         'website_url',
         'sort_order',
         'is_active',
@@ -80,6 +81,7 @@ class Entity extends Model
             'accent' => $this->accent_color,
             'logo_url' => $this->assetUrl($this->logo_path),
             'pattern_url' => $this->assetUrl($this->pattern_path),
+            'photo_url' => $this->assetUrl($this->photo_path),
         ]);
     }
 

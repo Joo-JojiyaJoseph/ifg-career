@@ -139,7 +139,8 @@ function ItemForm({ type, item, entities, onClose, onSaved }) {
   if (item !== source) {
     setSource(item)
     setErrors({})
-    setValues(item ? Object.fromEntries(section.fields.map((field) => [field.name, field.type === 'entity' ? item.entity?.slug ?? '' : field.type === 'image' ? null : item[field.name] ?? (field.type === 'switch' ? false : '')])) : {})
+    const fixed = Object.fromEntries(section.fields.filter((field) => field.type === 'hidden').map((field) => [field.name, field.value]))
+    setValues(item ? { ...Object.fromEntries(section.fields.map((field) => [field.name, field.type === 'entity' ? item.entity?.slug ?? '' : field.type === 'image' ? null : item[field.name] ?? (field.type === 'switch' ? false : '')])), ...fixed } : fixed)
   }
 
   const save = useMutation({
@@ -165,7 +166,7 @@ function ItemForm({ type, item, entities, onClose, onSaved }) {
   return (
     <SlideOver open={item !== null} onClose={onClose} title={creating ? `Add ${section.noun}` : `Edit ${section.noun}`}>
       <form className="flex flex-col gap-4" noValidate onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
-        {section.fields.filter((field) => !field.showIf || field.showIf(values)).map((field) => (
+        {section.fields.filter((field) => field.type !== 'hidden' && (!field.showIf || field.showIf(values))).map((field) => (
           <FieldInput
             key={field.name}
             field={field}

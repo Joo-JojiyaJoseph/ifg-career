@@ -7,7 +7,12 @@ export async function fetchContent() {
 
 export const contentQuery = { queryKey: ['public-content'], queryFn: fetchContent, staleTime: 600_000 }
 
-/** Seeded placeholder images are replaced by the orbit graphic until HR uploads a real photo. */
+/** The old seeded SVG placeholders are skipped; the section shows its brand gradient until HR uploads a photo. */
 export function isPlaceholder(url) {
-  return !url || url.startsWith('/images/placeholders/hero')
+  return !url || url.startsWith('/images/placeholders/')
+}
+
+/** Culture photos (HR's "activity" media items) shown in the hero, the belonging section and the footer. */
+export function culturePhotos(content) {
+  return (content?.media ?? []).filter((item) => item.type === 'activity' && item.photo_url && !isPlaceholder(item.photo_url))
 }

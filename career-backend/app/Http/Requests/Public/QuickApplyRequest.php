@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Public;
 
+use App\Enums\Gender;
 use App\Rules\AgeBetween;
 use App\Rules\PhoneNumber;
 use App\Support\ResumeRules;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class QuickApplyRequest extends FormRequest
 {
@@ -33,6 +35,7 @@ class QuickApplyRequest extends FormRequest
             'date_of_birth' => ['required', 'date', 'before:today', new AgeBetween],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20', new PhoneNumber],
+            'gender' => ['required', Rule::enum(Gender::class)],
             'highest_qualification' => ['required', 'string', 'max:255'],
             'location' => ['required', 'string', 'max:255'],
             'department_id' => ['required', 'integer', 'exists:departments,id'],
@@ -58,6 +61,8 @@ class QuickApplyRequest extends FormRequest
             'email.required' => 'Enter your email address.',
             'email.email' => 'Enter a valid email address.',
             'phone.required' => 'Enter your phone number.',
+            'gender.required' => 'Choose a gender.',
+            'gender.enum' => 'Choose Male, Female or Other.',
             'highest_qualification.required' => 'Enter your highest qualification.',
             'location.required' => 'Enter your city or town.',
             'department_id.required' => 'Choose a department.',
