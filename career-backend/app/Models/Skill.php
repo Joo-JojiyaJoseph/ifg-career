@@ -54,4 +54,10 @@ class Skill extends Model
     {
         return $this->belongsToMany(JobPosting::class, 'job_posting_skill');
     }
+
+    /** The companies that use this skill. None means every company. */
+    public function entities(): BelongsToMany
+    {
+        return $this->belongsToMany(Entity::class);
+    }
 }

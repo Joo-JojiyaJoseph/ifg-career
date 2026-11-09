@@ -244,8 +244,11 @@ EntityPill.propTypes = {
 }
 
 function FilterFields({ values, onChange, meta, entities, counts }) {
+  // With a company chosen, show its departments and skills plus the group-wide ones.
+  const departments = (meta?.departments ?? []).filter((department) => !values.entity || !department.entity || department.entity === values.entity)
+  const departmentLabel = (department) => (department.entity_name && !values.entity ? `${department.name} · ${department.entity_name}` : department.name)
   const teams = (meta?.teams ?? []).filter((team) => !values.department || String(team.department_id) === values.department)
-  const skillOptions = (meta?.skills ?? []).map((skill) => ({
+  const skillOptions = (meta?.skills ?? []).filter((skill) => !values.entity || !skill.entities?.length || skill.entities.includes(values.entity) || values.skills?.includes(skill.slug)).map((skill) => ({
     value: skill.slug,
     label: labelWithCount(skill.name, counts.skill?.[skill.slug]),
   }))
@@ -256,7 +259,10 @@ function FilterFields({ values, onChange, meta, entities, counts }) {
         <Select
           id="entity"
           value={values.entity}
-          onChange={(entity) => onChange({ entity })}
+          onChange={(entity) => {
+            const department = (meta?.departments ?? []).find((item) => String(item.id) === values.department)
+            onChange(department?.entity && entity && department.entity !== entity ? { entity, department: '', team: '' } : { entity })
+          }}
           placeholder="All entities"
           options={[
             { value: '', label: 'All entities' },
@@ -271,9 +277,9 @@ function FilterFields({ values, onChange, meta, entities, counts }) {
           onChange={(department) => onChange({ department, team: '' })}
           options={[
             { value: '', label: 'All departments' },
-            ...(meta?.departments ?? []).map((department) => ({
+            ...departments.map((department) => ({
               value: String(department.id),
-              label: labelWithCount(department.name, counts.department?.[department.id]),
+              label: labelWithCount(departmentLabel(department), counts.department?.[department.id]),
             })),
           ]}
         />

@@ -73,7 +73,7 @@ export function JobFormModal() {
   /** Creates a skill from the Skills box and returns its slug, so it's chosen straight away. */
   async function addSkill(name) {
     try {
-      const created = (await createListItem('skills', { name })).data
+      const created = (await createListItem('skills', { name, entities: values.entity ? [values.entity] : [] })).data
       await queryClient.invalidateQueries({ queryKey: ['hr-meta'] })
       toast.push({ tone: 'success', message: `Added "${created.name}" to the skills list.` })
       return created.slug
@@ -194,6 +194,12 @@ export function JobFormModal() {
   }
 
   const job = jobQuery.data
+  // Only the chosen company's departments and skills (plus the group-wide ones) are offered.
+  const fitsEntity = (owner) => !owner || !values.entity || owner === values.entity
+  const departments = (meta.data?.departments ?? []).filter((department) => fitsEntity(department.entity))
+  const skillOptions = (meta.data?.skills ?? [])
+    .filter((skill) => !skill.entities?.length || !values.entity || skill.entities.includes(values.entity) || values.skills?.includes(skill.slug))
+    .map((skill) => ({ value: skill.slug, label: skill.name }))
   const teams = (meta.data?.teams ?? []).filter((team) => !values.department_id || String(team.department_id) === values.department_id)
   const errors = form.formState.errors
 
@@ -303,13 +309,24 @@ export function JobFormModal() {
                 </FormField>
               </div>
               <FormField id="entity" label="Entity" required error={errors.entity?.message}>
-                <Select id="entity" value={values.entity} onChange={(entity) => form.setValue('entity', entity, { shouldDirty: true })} options={[{ value: '', label: 'Choose an entity' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />
+                <Select
+                  id="entity"
+                  value={values.entity}
+                  onChange={(entity) => {
+                    form.setValue('entity', entity, { shouldDirty: true })
+                    // A department from another company no longer fits; clear it (and its team).
+                    const current = (meta.data?.departments ?? []).find((department) => String(department.id) === values.department_id)
+                    if (current?.entity && current.entity !== entity) {
+                      form.setValue('department_id', '')
+                      form.setValue('team_id', '')
+                    }
+                  }} options={[{ value: '', label: 'Choose an entity' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />
               </FormField>
               <FormField id="level" label="Level" required error={errors.level?.message}>
                 <Select id="level" value={values.level} onChange={(level) => form.setValue('level', level, { shouldDirty: true })} options={[{ value: '', label: 'Choose a level' }, ...(meta.data?.enums?.job_levels ?? []).map((level) => ({ value: level.value, label: level.label }))]} />
               </FormField>
               <FormField id="department_id" label="Department">
-                <Select id="department_id" value={values.department_id} onChange={(department_id) => { form.setValue('department_id', department_id, { shouldDirty: true }); form.setValue('team_id', '') }} options={[{ value: '', label: 'No department' }, ...(meta.data?.departments ?? []).map((department) => ({ value: String(department.id), label: department.name }))]} />
+                <Select id="department_id" value={values.department_id} onChange={(department_id) => { form.setValue('department_id', department_id, { shouldDirty: true }); form.setValue('team_id', '') }} options={[{ value: '', label: 'No department' }, ...departments.map((department) => ({ value: String(department.id), label: department.entity || !values.entity ? department.name : `${department.name} (whole group)` }))]} />
               </FormField>
               <FormField id="team_id" label="Team">
                 <Select id="team_id" value={values.team_id} onChange={(team_id) => form.setValue('team_id', team_id, { shouldDirty: true })} options={[{ value: '', label: 'No team' }, ...teams.map((team) => ({ value: String(team.id), label: team.name }))]} />
@@ -350,7 +367,7 @@ export function JobFormModal() {
                 placeholder="Type a skill, then press Enter"
                 value={values.skills}
                 onChange={(skills) => form.setValue('skills', skills, { shouldDirty: true, shouldValidate: form.formState.isSubmitted })}
-                options={(meta.data?.skills ?? []).map((skill) => ({ value: skill.slug, label: skill.name }))}
+                options={skillOptions}
                 invalid={Boolean(errors.skills)}
                 onCreate={canManageLists ? addSkill : undefined}
                 createHint={canManageLists ? null : 'Ask an Admin to add it in Settings → Lists.'}

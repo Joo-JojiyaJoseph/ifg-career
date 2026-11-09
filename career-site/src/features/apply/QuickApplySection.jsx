@@ -149,9 +149,10 @@ export function QuickApplyForm({ confirmation, bare = false }) {
     )
   }
 
+  // Two companies can each have, say, "Engineering"; name the company so candidates can tell them apart.
   const departments = (meta.data?.departments ?? []).map((department) => ({
     value: String(department.id),
-    label: department.name,
+    label: department.entity_name ? `${department.name} · ${department.entity_name}` : department.name,
   }))
 
   return (

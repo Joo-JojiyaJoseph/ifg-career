@@ -8,7 +8,8 @@ use App\Models\Team;
 use Illuminate\Validation\Rule;
 
 /**
- * Lists the Admin maintains: departments (Quick apply and filters), teams and skills.
+ * Lists the Admin maintains: departments (each under a company, or group-wide), teams (under a department)
+ * and skills (linked to companies, or open to all).
  */
 class ListTypes
 {
@@ -37,7 +38,8 @@ class ListTypes
 
         return match ($type) {
             'departments' => [
-                'name' => [$required, 'string', 'max:100', Rule::unique('departments', 'name')->ignore($ignoreId)->whereNull('deleted_at')],
+                'name' => [$required, 'string', 'max:100'],
+                'entity' => ['sometimes', 'nullable', 'string', Rule::exists('entities', 'slug')],
                 'is_active' => ['sometimes', 'boolean'],
             ],
             'teams' => [
@@ -47,6 +49,8 @@ class ListTypes
             ],
             'skills' => [
                 'name' => [$required, 'string', 'max:80', Rule::unique('skills', 'name')->ignore($ignoreId)],
+                'entities' => ['sometimes', 'array'],
+                'entities.*' => ['string', 'distinct', Rule::exists('entities', 'slug')],
                 'is_active' => ['sometimes', 'boolean'],
             ],
             default => abort(404),

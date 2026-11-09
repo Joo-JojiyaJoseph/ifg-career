@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\JobStatus;
 use App\Filters\JobPostingFilter;
+use App\Models\Department;
 use App\Models\Entity;
 use App\Models\JobPosting;
 use App\Models\Skill;
@@ -274,7 +275,25 @@ class JobPostingService
             unset($attributes['role_key']);
         }
 
+        $this->assertDepartmentFitsEntity(
+            array_key_exists('department_id', $attributes) ? $attributes['department_id'] : $existing?->department_id,
+            array_key_exists('entity_id', $attributes) ? $attributes['entity_id'] : $existing?->entity_id,
+        );
+
         return $attributes;
+    }
+
+    /** A job's department must belong to the job's company, or be group-wide. */
+    private function assertDepartmentFitsEntity(?int $departmentId, ?int $entityId): void
+    {
+        if (! $departmentId) {
+            return;
+        }
+
+        $owner = Department::query()->whereKey($departmentId)->value('entity_id');
+        if ($owner !== null && $owner !== $entityId) {
+            throw ValidationException::withMessages(['department_id' => 'This department belongs to another company. Choose one of this company\'s departments.']);
+        }
     }
 
     /**

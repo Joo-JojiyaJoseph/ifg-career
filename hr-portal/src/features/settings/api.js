@@ -17,7 +17,7 @@ export const resetTwoFactor = (id) => post(`/api/v1/hr/users/${id}/reset-2fa`)
 export const resendInvite = (id) => post(`/api/v1/hr/users/${id}/resend-invite`)
 export const fetchMatrix = async () => (await client.get('/api/v1/hr/roles-permissions')).data.data
 export const saveMatrix = (roles) => put('/api/v1/hr/roles-permissions', { roles })
-export const fetchList = async (type) => (await client.get(`/api/v1/hr/lists/${type}`)).data.data
+export const fetchList = async (type, entity = '') => (await client.get(`/api/v1/hr/lists/${type}`, { params: entity ? { entity } : {} })).data.data
 export const createListItem = (type, body) => post(`/api/v1/hr/lists/${type}`, body)
 export const updateListItem = (type, id, body) => patch(`/api/v1/hr/lists/${type}/${id}`, body)
 export const deleteListItem = async (type, id) => {

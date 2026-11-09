@@ -56,12 +56,13 @@ class MetaController extends Controller
                     'export_statuses' => ExportStatus::options(),
                     'media_types' => MediaType::options(),
                 ],
-                'departments' => Department::query()->active()->ordered()->get(['id', 'name'])
-                    ->map(fn (Department $department) => ['id' => $department->id, 'name' => $department->name])->values()->all(),
+                // Each department names its company (null = group-wide); each skill lists its companies (empty = all).
+                'departments' => Department::query()->active()->ordered()->with('entity:id,name,slug')->get(['id', 'name', 'entity_id'])
+                    ->map(fn (Department $department) => ['id' => $department->id, 'name' => $department->name, 'entity' => $department->entity?->slug, 'entity_name' => $department->entity?->name])->values()->all(),
                 'teams' => Team::query()->active()->with('department:id,name')->orderBy('name')->get(['id', 'name', 'department_id'])
                     ->map(fn (Team $team) => ['id' => $team->id, 'name' => $team->name, 'department_id' => $team->department_id])->values()->all(),
-                'skills' => Skill::query()->active()->orderBy('name')->get(['id', 'name', 'slug'])
-                    ->map(fn (Skill $skill) => ['id' => $skill->id, 'name' => $skill->name, 'slug' => $skill->slug])->values()->all(),
+                'skills' => Skill::query()->active()->orderBy('name')->with('entities:id,slug')->get(['id', 'name', 'slug'])
+                    ->map(fn (Skill $skill) => ['id' => $skill->id, 'name' => $skill->name, 'slug' => $skill->slug, 'entities' => $skill->entities->pluck('slug')->values()->all()])->values()->all(),
                 'locations' => JobPosting::query()->open()->distinct()->orderBy('location')->pluck('location')->values()->all(),
             ];
         });
