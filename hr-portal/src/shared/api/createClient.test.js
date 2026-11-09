@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { matchPageHost } from './createClient'
+import { bodyOf } from './createClient'
 
-// jsdom serves the test page from http://localhost.
-describe('matchPageHost', () => {
-  it('uses the page host when both are loopback names', () => {
-    expect(matchPageHost('http://127.0.0.1:8000')).toBe('http://localhost:8000')
-    expect(matchPageHost('http://127.0.0.1:8000/api/v1/auth/google/redirect')).toBe('http://localhost:8000/api/v1/auth/google/redirect')
+describe('bodyOf', () => {
+  it('keeps a parsed JSON body', () => {
+    expect(bodyOf({ message: 'Nope' })).toEqual({ message: 'Nope' })
   })
 
-  it('leaves real domains and matching hosts alone', () => {
-    expect(matchPageHost('https://api.infolksgroup.com')).toBe('https://api.infolksgroup.com')
-    expect(matchPageHost('http://localhost:8000')).toBe('http://localhost:8000')
+  it('reads the JSON out of a body that starts with a PHP warning', () => {
+    const raw = '<br />\n<b>Deprecated</b>: something in vendor/x.php on line 3<br />\n{"message":"There is already a company with this name.","errors":{"name":["There is already a company with this name."]}}'
+    expect(bodyOf(raw).errors.name[0]).toBe('There is already a company with this name.')
+  })
+
+  it('returns an empty object for HTML or nothing', () => {
+    expect(bodyOf('<html>413 Request Entity Too Large</html>')).toEqual({})
+    expect(bodyOf(undefined)).toEqual({})
   })
 })

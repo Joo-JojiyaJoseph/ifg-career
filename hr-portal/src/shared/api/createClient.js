@@ -63,6 +63,8 @@ function messageFor(status, data, error) {
       : 'Your session expired. Refresh the page and try again.'
   }
   if (data.message && status !== 500) return data.message
+  const firstFieldError = Object.values(data.errors ?? {}).flat()[0]
+  if (firstFieldError) return firstFieldError
   if (!error.response) return error.code === 'ECONNABORTED' ? 'The server took too long to answer. Please try again.' : 'We could not reach the server. Check your connection and try again.'
   if (status === 429) return 'Too many attempts. Please wait a minute and try again.'
   if (status === 413) return 'The files are larger than the server accepts (error 413). Choose smaller files, or raise post_max_size and upload_max_filesize in php.ini.'
@@ -92,9 +94,25 @@ client.interceptors.response.use(
 )
 
 /** Adds a readable message, field errors and the API's error code to an Axios error. */
+/**
+ * The error body as an object. When PHP prints a warning before the JSON (display_errors on), axios hands over a
+ * string; the JSON part is still in there, so read it out rather than losing the message and field errors.
+ */
+export function bodyOf(raw) {
+  if (raw && typeof raw === 'object') return raw
+  if (typeof raw !== 'string') return {}
+  const start = raw.indexOf('{"')
+  if (start === -1) return {}
+  try {
+    return JSON.parse(raw.slice(start))
+  } catch {
+    return {}
+  }
+}
+
 function normalize(error) {
   const status = error.response?.status
-  const data = error.response?.data ?? {}
+  const data = bodyOf(error.response?.data)
   const normalized = Object.assign(error, {
     status,
     message: messageFor(status, data, error),

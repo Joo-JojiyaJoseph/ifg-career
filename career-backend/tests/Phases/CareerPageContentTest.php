@@ -156,3 +156,17 @@ it('explains a request that is bigger than post_max_size', function () {
         ->assertJsonPath('code', 'post_too_large')
         ->assertJsonPath('message', fn ($message) => str_contains($message, 'post_max_size'));
 });
+
+it('says when the server has no temporary folder for uploads', function () {
+    actingAsHr();
+    $file = new UploadedFile(__FILE__, 'logo.png', 'image/png', UPLOAD_ERR_NO_TMP_DIR, true);
+
+    $this->post('/api/v1/hr/content/entities/medrays', ['logo' => $file], ['Accept' => 'application/json'])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.logo.0', fn ($message) => str_contains($message, 'upload_tmp_dir') && ! str_contains($message, 'larger'));
+});
+
+it('reports the upload settings in system health', function () {
+    actingAsHr('Admin');
+    $this->getJson('/api/v1/hr/system/health')->assertOk()->assertJsonStructure(['data' => ['uploads' => ['file_uploads', 'upload_max_filesize', 'post_max_size', 'tmp_dir', 'tmp_dir_writable', 'ok']]]);
+});

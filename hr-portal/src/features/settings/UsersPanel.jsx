@@ -63,11 +63,13 @@ export function UsersPanel() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {!user.is_active ? <Badge color="slate">Deactivated</Badge> : null}
-              {user.invited ? <Badge color="amber">Invite pending</Badge> : <span className="text-xs text-muted">Last sign-in {formatDateTime(user.last_login_at)}</span>}
+              {user.invited ? <Badge color="amber">Invite pending</Badge> : <span className="whitespace-nowrap text-xs text-muted">{user.last_login_at ? `Last sign-in ${formatDateTime(user.last_login_at)}` : 'Never signed in'}</span>}
               {user.two_factor_enabled ? <Badge color="green">2-step on</Badge> : null}
               <div className="w-28">
                 <Select id={`role-${user.id}`} value={user.role ?? 'HR'} onChange={(value) => value !== user.role && role.mutate({ id: user.id, value })} options={roleOptions} />
               </div>
+              {/* Only show the menu when this user has something in it (your own row often has nothing). */}
+              {user.invited || user.two_factor_enabled || !user.is_me ? (
               <Menu as="div" className="relative">
                 <MenuButton className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-brand-50" aria-label={`More actions for ${user.name}`}>
                   <EllipsisVerticalIcon className="h-5 w-5 text-navy" />
@@ -84,6 +86,9 @@ export function UsersPanel() {
                   ) : null}
                 </MenuItems>
               </Menu>
+              ) : (
+                <span className="inline-block min-w-11" aria-hidden="true" />
+              )}
             </div>
           </li>
         ))}

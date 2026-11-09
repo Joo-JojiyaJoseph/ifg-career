@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { Button } from '@shared/ui/Button'
@@ -49,8 +50,38 @@ export function SystemPanel() {
             </li>
           ))}
         </ul>
+        {data.uploads ? <UploadSettings uploads={data.uploads} /> : null}
         <p className="mt-4 text-xs text-muted">Laravel {data.app.laravel} · PHP {data.app.php} · {data.app.environment}{data.app.debug ? ' · debug on' : ''}</p>
       </Card>
     </div>
   )
 }
+
+/** PHP's upload settings: when uploads fail, this says which php.ini setting to change. */
+function UploadSettings({ uploads }) {
+  const rows = [
+    ['Uploads allowed (file_uploads)', uploads.file_uploads ? 'On' : 'Off', uploads.file_uploads],
+    ['Largest file (upload_max_filesize)', uploads.upload_max_filesize, uploads.ok || uploads.tmp_dir_writable],
+    ['Largest request (post_max_size)', uploads.post_max_size, true],
+    ['Temporary folder (upload_tmp_dir)', uploads.tmp_dir_writable ? uploads.tmp_dir : `${uploads.tmp_dir || 'not set'} (missing or not writable)`, uploads.tmp_dir_writable],
+  ]
+  return (
+    <div className="mt-5 border-t border-border pt-4">
+      <h3 className="flex items-center gap-2 font-medium text-navy">
+        {uploads.ok ? <CheckCircleIcon className="h-5 w-5 text-success" aria-hidden="true" /> : <ExclamationTriangleIcon className="h-5 w-5 text-warning" aria-hidden="true" />}
+        File uploads
+      </h3>
+      <dl className="mt-2 flex flex-col gap-1 text-sm">
+        {rows.map(([label, value, good]) => (
+          <div key={label} className="flex flex-wrap justify-between gap-x-3">
+            <dt className="text-muted">{label}</dt>
+            <dd className={`break-all font-medium ${good ? 'text-navy' : 'text-danger'}`}>{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {!uploads.ok ? <p className="mt-2 text-sm text-warning">Fix the settings in red in php.ini (5M or more for uploads, and a writable temporary folder), then restart PHP.</p> : null}
+    </div>
+  )
+}
+
+UploadSettings.propTypes = { uploads: PropTypes.object.isRequired }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Hr;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\GoogleCalendarService;
+use App\Support\UploadDiagnostics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -45,6 +46,7 @@ class SystemController extends Controller
                 ['key' => 'mail', 'name' => 'Email ('.config('mail.default').')', 'configured' => config('mail.default') !== 'log' && config('mail.default') !== 'array', 'testable' => true],
                 ['key' => 'turnstile', 'name' => 'Cloudflare Turnstile (spam protection)', 'configured' => filled(config('services.turnstile.secret')), 'testable' => false],
             ],
+            'uploads' => UploadDiagnostics::settings(),
             'app' => ['environment' => app()->environment(), 'debug' => (bool) config('app.debug'), 'laravel' => app()->version(), 'php' => PHP_VERSION],
         ]]);
     }

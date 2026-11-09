@@ -35,6 +35,7 @@ use App\Observers\CandidateObserver;
 use App\Observers\ContentObserver;
 use App\Observers\InterviewRoundObserver;
 use App\Observers\JobPostingObserver;
+use App\Support\UploadDiagnostics;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -54,6 +56,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // "uploaded" fails for several reasons; say which one (size, missing temp folder, partial upload…).
+        Validator::replacer('uploaded', fn ($message, $attribute, $rule, $parameters, $validator) => UploadDiagnostics::message(
+            $validator->getDisplayableAttribute($attribute),
+            data_get($validator->getData(), $attribute),
+        ));
         $this->registerPolicies();
 
         JobPosting::observe(JobPostingObserver::class);
