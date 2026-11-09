@@ -6,9 +6,11 @@ import PropTypes from 'prop-types'
 import { Aurora } from '@shared/ui/Aurora'
 import { EntityLogo } from '@shared/ui/BrandLogo'
 import { EntityArt } from '@shared/ui/illustrations/EntityArt'
+import { Photo } from '@shared/ui/Photo'
 import { WordReveal } from '@shared/ui/WordReveal'
 import { Button } from '@shared/ui/Button'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
+import { useQuickApply } from '../apply/quickApplyContext'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { FilterBar } from '@shared/ui/FilterBar'
 import { FilterChips } from '@shared/ui/FilterChips'
@@ -40,6 +42,7 @@ export function JobSearchPage() {
   const [params, setParams] = useSearchParams()
   const filters = readFilters(params)
   const [open, setOpen] = useState(false)
+  const { openJobAlerts } = useQuickApply()
   const [draft, setDraft] = useState(filters)
   const searchRef = useRef(null)
   const queryClient = useQueryClient()
@@ -102,10 +105,10 @@ export function JobSearchPage() {
           {entities.data?.length >= 2 ? (
             <div className="pointer-events-none absolute right-4 top-8 hidden w-80 lg:block" aria-hidden="true">
               <div className="absolute right-24 top-6 w-56 -rotate-6"><div className="glass-dark rounded-3xl border p-1.5 motion-safe:animate-float-slow">
-                <EntityArt entity={entities.data[0]} index={0} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />
+                {entities.data[0].theme?.photo_url ? <Photo src={entities.data[0].theme.photo_url} className="aspect-[4/3] rounded-[1.2rem]" sizes="224px" /> : <EntityArt entity={entities.data[0]} index={0} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />}
               </div></div>
               <div className="absolute right-0 top-20 w-56 rotate-3"><div className="glass-dark rounded-3xl border p-1.5 motion-safe:animate-float-slow [animation-delay:-3s]">
-                <EntityArt entity={entities.data[1]} index={1} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />
+                {entities.data[1].theme?.photo_url ? <Photo src={entities.data[1].theme.photo_url} className="aspect-[4/3] rounded-[1.2rem]" sizes="224px" /> : <EntityArt entity={entities.data[1]} index={1} className="block h-auto w-full rounded-[1.2rem] bg-white/95" />}
               </div></div>
             </div>
           ) : null}
@@ -177,7 +180,16 @@ export function JobSearchPage() {
         ) : null}
         {list.isError ? <ErrorState onRetry={() => list.refetch()} /> : null}
         {!list.isLoading && !list.isError && jobs.length === 0 ? (
-          <EmptyState title="No roles match these filters" description="Try another skill, entity or location." action={<Button onClick={clearAll}>Clear filters</Button>} />
+          <EmptyState
+            title="No roles match these filters"
+            description="Try another skill, entity or location, or get an email when a new role opens."
+            action={
+              <div className="flex flex-col justify-center gap-2 sm:flex-row">
+                <Button onClick={clearAll}>Clear filters</Button>
+                <Button variant="secondary" onClick={openJobAlerts}>Get job alerts</Button>
+              </div>
+            }
+          />
         ) : null}
         <div className="flex flex-col gap-4">
           {jobs.map((job) => (

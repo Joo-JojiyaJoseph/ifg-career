@@ -65,13 +65,19 @@
     @apply border border-white/15 bg-white/[0.08] text-white shadow-glass-dark backdrop-blur-xl backdrop-saturate-150;
   }
 
+  /* Dark tinted glass for labels laid over photos, readable on light and dark pictures alike. */
+  .glass-ink {
+    @apply border border-white/20 bg-ink/55 text-white backdrop-blur-md backdrop-saturate-150;
+  }
+
   /* Fallback when the browser cannot blur: keep text readable. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass {
       @apply bg-white/95;
     }
 
-    .glass-dark {
+    .glass-dark,
+    .glass-ink {
       @apply bg-ink/90;
     }
   }

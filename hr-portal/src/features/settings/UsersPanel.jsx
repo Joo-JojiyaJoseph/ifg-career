@@ -120,15 +120,23 @@ function InviteModal({ open, onClose }) {
   })
 
   return (
-    <Modal open={open} onClose={onClose} title="Invite an HR user">
-      <form className="flex flex-col gap-4" noValidate onSubmit={(event) => { event.preventDefault(); invite.mutate() }}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      icon={UserPlusIcon}
+      title="Invite an HR user"
+      description="They get an email to set their own password."
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="invite-form" loading={invite.isPending}>Send invitation</Button>
+        </>
+      }
+    >
+      <form id="invite-form" className="flex flex-col gap-4" noValidate onSubmit={(event) => { event.preventDefault(); invite.mutate() }}>
         <FormField id="invite-name" label="Name" required error={errors.name}><Input id="invite-name" value={values.name} onChange={(event) => setValues((current) => ({ ...current, name: event.target.value }))} /></FormField>
         <FormField id="invite-email" label="Work email" required error={errors.email} hint="They get an email to set their own password."><Input id="invite-email" type="email" value={values.email} onChange={(event) => setValues((current) => ({ ...current, email: event.target.value }))} /></FormField>
         <FormField id="invite-role" label="Role" error={errors.role}><Select id="invite-role" value={values.role} onChange={(role) => setValues((current) => ({ ...current, role }))} options={roleOptions} /></FormField>
-        <div className="flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={invite.isPending}>Send invitation</Button>
-        </div>
       </form>
     </Modal>
   )

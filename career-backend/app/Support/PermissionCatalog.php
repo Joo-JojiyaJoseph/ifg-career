@@ -22,6 +22,7 @@ class PermissionCatalog
         'talent.export',
         'campaigns.send',
         'content.manage',
+        'entities.manage',
         'reports.view',
         'settings.users',
         'settings.lists',
@@ -30,6 +31,7 @@ class PermissionCatalog
     ];
 
     public const HR_EXCLUDED = [
+        'entities.manage',
         'settings.users',
         'settings.lists',
         'audit.view',

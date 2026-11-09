@@ -6,7 +6,7 @@ import { Button } from '@shared/ui/Button'
 import { ConfirmDialog } from '@shared/ui/ConfirmDialog'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { IconButton } from '@shared/ui/IconButton'
-import { SlideOver } from '@shared/ui/Modal'
+import { Modal } from '@shared/ui/Modal'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
 import { SafeHtml } from '@shared/ui/SafeHtml'
 import { SortableList } from '@shared/ui/SortableList'
@@ -139,7 +139,9 @@ function ItemForm({ type, item, entities, onClose, onSaved }) {
   if (item !== source) {
     setSource(item)
     setErrors({})
-    setValues(item ? Object.fromEntries(section.fields.map((field) => [field.name, field.type === 'entity' ? item.entity?.slug ?? '' : field.type === 'image' ? null : item[field.name] ?? (field.type === 'switch' ? false : '')])) : {})
+    const fixed = Object.fromEntries(section.fields.filter((field) => field.type === 'hidden').map((field) => [field.name, field.value]))
+    const defaults = Object.fromEntries(section.fields.filter((field) => field.default !== undefined).map((field) => [field.name, field.default]))
+    setValues(item ? { ...Object.fromEntries(section.fields.map((field) => [field.name, field.type === 'entity' ? item.entity?.slug ?? '' : field.type === 'image' ? null : item[field.name] ?? (field.type === 'switch' ? false : '')])), ...fixed } : { ...defaults, ...fixed })
   }
 
   const save = useMutation({
@@ -163,9 +165,22 @@ function ItemForm({ type, item, entities, onClose, onSaved }) {
   })
 
   return (
-    <SlideOver open={item !== null} onClose={onClose} title={creating ? `Add ${section.noun}` : `Edit ${section.noun}`}>
-      <form className="flex flex-col gap-4" noValidate onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
-        {section.fields.filter((field) => !field.showIf || field.showIf(values)).map((field) => (
+    <Modal
+      open={item !== null}
+      onClose={onClose}
+      size="lg"
+      icon={creating ? PlusIcon : PencilSquareIcon}
+      title={creating ? `Add ${section.noun}` : `Edit ${section.noun}`}
+      description={section.title}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form={`content-form-${type}`} loading={save.isPending}>{creating ? 'Add' : 'Save'}</Button>
+        </>
+      }
+    >
+      <form id={`content-form-${type}`} className="flex flex-col gap-4" noValidate onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
+        {section.fields.filter((field) => field.type !== 'hidden' && (!field.showIf || field.showIf(values))).map((field) => (
           <FieldInput
             key={field.name}
             field={field}
@@ -178,12 +193,8 @@ function ItemForm({ type, item, entities, onClose, onSaved }) {
             onChange={(value) => setValues((current) => ({ ...current, [field.name]: value }))}
           />
         ))}
-        <div className="mt-2 flex justify-end gap-3">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" loading={save.isPending}>{creating ? 'Add' : 'Save'}</Button>
-        </div>
       </form>
-    </SlideOver>
+    </Modal>
   )
 }
 

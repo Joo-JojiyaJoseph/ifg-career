@@ -25,6 +25,7 @@ import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
 import { HrDeskIllustration } from '@shared/ui/illustrations/HrDesk'
 import { Aurora } from '@shared/ui/Aurora'
+import { Photo } from '@shared/ui/Photo'
 import { Stagger, StaggerItem } from '@shared/ui/Motion'
 import { DonutChart } from '@shared/ui/DonutChart'
 import { EntityBadge } from '@shared/ui/EntityBadge'
@@ -55,13 +56,21 @@ export function DashboardPage() {
   const stats = useQuery({ queryKey: ['dash', 'stats', scope], queryFn: () => fetchStats(scope), ...live })
   const actions = useQuery({ queryKey: ['dash', 'actions', scope], queryFn: () => fetchActionItems(scope), ...live, refetchInterval: 120_000 })
 
+  // The promo card's team photo (Website Content → Opening banner) also decorates the welcome banner.
+  const promo = useQuery({ queryKey: ['dash', 'promo'], queryFn: () => fetchPromo(), staleTime: 600_000 })
+  const teamPhoto = promo.data?.image && !promo.data.image.endsWith('.svg') ? promo.data.image : null
+
   const withEntity = (path) => (entity ? `${path}${path.includes('?') ? '&' : '?'}entity=${entity}` : path)
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Career Overview"
-        art={<HrDeskIllustration className="h-auto w-full motion-safe:animate-float-slow" />}
+        art={teamPhoto ? (
+          <div className="glass rounded-[1.75rem] p-1.5 motion-safe:animate-float-slow">
+            <Photo src={teamPhoto} alt="" className="aspect-[16/10] rounded-[1.4rem]" sizes="352px" />
+          </div>
+        ) : <HrDeskIllustration className="h-auto w-full motion-safe:animate-float-slow" />}
         subtitle={<span>Welcome back, {firstName}! Let's build a stronger team together. <HeartIcon className="inline h-4 w-4 text-brand-500" aria-hidden="true" /></span>}
         actions={
           <>
@@ -348,17 +357,40 @@ function PromoCard() {
 
   if (!data) return promo.isLoading ? <Skeleton className="h-48" /> : null
 
+  const photo = data.image && !data.image.endsWith('.svg') ? data.image : null
+  const link = (
+    <a href={data.careers_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-gradient-to-r from-brand-700 to-brand-500 px-4 text-sm font-medium text-white shadow-md shadow-brand-500/30 transition duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
+      Open careers site <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+    </a>
+  )
+
+  if (photo) {
+    // A team photo from Website Content, with the headline on smoked glass.
+    return (
+      <section className="group relative isolate flex min-h-52 items-end overflow-hidden rounded-3xl p-3 text-white shadow-lift">
+        <Photo src={photo} alt="" className="!absolute inset-0 -z-10" imgClassName="transition-transform duration-700 group-hover:scale-105" sizes="(min-width: 1024px) 400px, 100vw" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" aria-hidden="true" />
+        <div className="glass-ink w-full rounded-2xl p-4">
+          <h2 className="font-display text-xl font-semibold leading-tight">{data.headline}</h2>
+          {data.tagline ? <p className="mt-1 text-sm text-white/75">{data.tagline}</p> : null}
+          {link}
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <section className="glass relative isolate overflow-hidden rounded-3xl p-6">
+    <section className="glass relative isolate flex flex-col overflow-hidden rounded-3xl">
       <Aurora tone="light" />
-      <div className="relative z-10 max-w-[55%]">
+      {/* The illustration has its own band, so it never sits on top of the text or the button. */}
+      <div className="relative flex h-32 items-end justify-center bg-gradient-to-br from-brand-50 to-cyan-50 px-6 pt-4">
+        <img src={data.image || '/images/placeholders/promo.svg'} alt="" className="h-full w-auto max-w-full object-contain object-bottom" loading="lazy" />
+      </div>
+      <div className="relative z-10 p-6 pt-5">
         <h2 className="font-display text-xl font-semibold leading-tight text-ink">{data.headline}</h2>
         {data.tagline ? <p className="mt-2 text-sm text-muted">{data.tagline}</p> : null}
-        <a href={data.careers_url} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-11 items-center gap-1 rounded-full bg-gradient-to-r from-brand-700 to-brand-500 px-4 text-sm font-medium text-white shadow-md shadow-brand-500/30 transition duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
-          Open careers site <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
-        </a>
+        {link}
       </div>
-      <img src={data.image || '/images/placeholders/promo.svg'} alt="" className="absolute -bottom-2 -right-4 h-36 w-auto sm:h-40" loading="lazy" />
     </section>
   )
 }

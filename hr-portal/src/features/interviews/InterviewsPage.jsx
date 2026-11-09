@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  AdjustmentsHorizontalIcon,
   CalendarDaysIcon,
   CheckBadgeIcon,
   ListBulletIcon,
@@ -23,9 +22,10 @@ import { FilterBar } from '@shared/ui/FilterBar'
 import { FilterChips } from '@shared/ui/FilterChips'
 import { FormField } from '@shared/ui/FormField'
 import { Input } from '@shared/ui/Input'
-import { SlideOver } from '@shared/ui/Modal'
 import { Pagination } from '@shared/ui/Pagination'
 import { ResultCount } from '@shared/ui/ResultCount'
+import { FilterPanel } from '@shared/ui/FilterPanel'
+import { FilterToolbar, QuickFilter } from '@shared/ui/FilterToolbar'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -85,6 +85,10 @@ export function InterviewsPage() {
 
   const filters = Object.fromEntries(params.entries())
   const shared = { q: filters.q, entity: filters.entity, job: filters.job, candidate: filters.candidate }
+  // Filters apply as you change them; the panel only tidies them away.
+  const filterKeys = ['entity', 'job', 'status', 'mode', 'interviewer', 'sync', 'when', 'from', 'to']
+  const activeCount = filterKeys.filter((key) => filters[key]).length
+  const clearFilters = () => update(Object.fromEntries(filterKeys.map((key) => [key, ''])))
 
   return (
     <div className="flex flex-col gap-5">
@@ -94,15 +98,18 @@ export function InterviewsPage() {
         actions={<Button variant="secondary" icon={CalendarDaysIcon} onClick={() => update({ view: 'calendar' })}>Open calendar</Button>}
       />
       <Tabs items={views} value={view} onChange={(next) => update({ view: next === 'pipeline' ? '' : next })} label="Interview views" />
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <div className="flex-1">
-          <SearchInput id="interview-search" value={filters.q ?? ''} onChange={(q) => update({ q })} placeholder="Search candidate, email or role" label="Search interviews" />
+      <FilterToolbar
+        search={<SearchInput id="interview-search" value={filters.q ?? ''} onChange={(q) => update({ q })} placeholder="Search candidate, email or role" label="Search interviews" />}
+        quick={<QuickFilter id="quick-entity" label="Entity" value={filters.entity ?? ''} onChange={(entity) => update({ entity })} options={[{ value: '', label: 'All entities' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />}
+        activeCount={activeCount}
+        onOpen={() => setFiltersOpen(true)}
+      />
+      {activeCount ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted">{activeCount} {activeCount === 1 ? 'filter' : 'filters'} on</span>
+          <Button variant="ghost" size="sm" onClick={clearFilters}>Clear all</Button>
         </div>
-        <Button className="lg:hidden" variant="secondary" icon={AdjustmentsHorizontalIcon} onClick={() => setFiltersOpen(true)}>Filters</Button>
-      </div>
-      <div className="hidden lg:block">
-        <InterviewFilters view={view} values={filters} onChange={update} meta={meta.data} entities={entities.data ?? []} />
-      </div>
+      ) : null}
       {view === 'pipeline' ? (
         <PipelineView filters={{ ...shared, stage: filters.stage, page: filters.page }} onChange={update} canManage={canManage} onSchedule={setScheduleFor} />
       ) : null}
@@ -112,10 +119,9 @@ export function InterviewsPage() {
       {view === 'calendar' ? (
         <CalendarView filters={filters} onChange={update} onSelect={setSelected} />
       ) : null}
-      <SlideOver open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
+      <FilterPanel open={filtersOpen} onClose={() => setFiltersOpen(false)} activeCount={activeCount} onClear={clearFilters}>
         <InterviewFilters view={view} values={filters} onChange={update} meta={meta.data} entities={entities.data ?? []} />
-        <Button className="mt-4 w-full" onClick={() => setFiltersOpen(false)}>Show results</Button>
-      </SlideOver>
+      </FilterPanel>
       <ScheduleRoundPanel open={Boolean(scheduleFor) || Boolean(reschedule)} onClose={() => { setScheduleFor(null); setReschedule(null) }} application={scheduleFor} round={reschedule} />
       <RoundDetailPanel round={selected} canManage={canManage} onClose={() => setSelected(null)} onReschedule={(round) => { setSelected(null); setReschedule(round) }} />
     </div>

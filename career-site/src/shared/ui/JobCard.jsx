@@ -8,11 +8,12 @@ import { EntityBadge } from './EntityBadge'
 import { EntityLogo } from './BrandLogo'
 
 /**
- * Public role card themed with the hiring entity's accent and logo.
+ * Public role card in the hiring company's theme: its colours, logo and a matching hover glow.
  */
 export function JobCard({ job, onHover }) {
   const accent = job.entity?.theme?.accent || '#1976D2'
   const primary = job.entity?.theme?.primary || '#0B4FA3'
+  const dark = job.entity?.theme?.secondary || '#0A2540'
   const spot = useSpotlight()
   const teamLine = [job.department?.name, job.team?.name].filter(Boolean).join(' · ')
 
@@ -24,8 +25,11 @@ export function JobCard({ job, onHover }) {
       onFocus={onHover}
       {...spot}
       className="spotlight group relative block overflow-hidden rounded-3xl border border-border bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-[color-mix(in_srgb,var(--entity-accent)_40%,white)] hover:shadow-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
-      style={{ '--entity-accent': accent, '--entity-primary': primary, '--spot-color': `color-mix(in srgb, ${accent} 14%, transparent)` }}
+      style={{ '--entity-accent': accent, '--entity-primary': primary, '--entity-dark': dark, '--spot-color': `color-mix(in srgb, ${accent} 14%, transparent)` }}
     >
+      {/* The hiring company's colours: a stripe down the left edge and a soft glow in the corner. */}
+      <span className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-[var(--entity-dark)] via-[var(--entity-primary)] to-[var(--entity-accent)]" aria-hidden="true" />
+      <span className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[var(--entity-accent)] opacity-[0.08] blur-2xl transition-opacity duration-300 group-hover:opacity-20" aria-hidden="true" />
       <div className="flex items-start gap-4">
         {job.entity ? <EntityLogo entity={job.entity} size="md" className="hidden transition duration-200 group-hover:scale-105 sm:flex" /> : null}
         <div className="min-w-0 flex-1">

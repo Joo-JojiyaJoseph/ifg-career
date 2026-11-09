@@ -1,8 +1,10 @@
 import PropTypes from 'prop-types'
+import { useInFilterPanel } from './filterPanelContext'
 
-/** Wraps a row of filter controls. */
+/** Wraps filter controls: a grid on the page, a single column inside a FilterPanel. */
 export function FilterBar({ children, className = '' }) {
-  return <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 ${className}`}>{children}</div>
+  const inPanel = useInFilterPanel()
+  return <div className={`grid grid-cols-1 gap-4 ${inPanel ? '' : 'sm:grid-cols-2 xl:grid-cols-4'} ${className}`}>{children}</div>
 }
 
 FilterBar.propTypes = {

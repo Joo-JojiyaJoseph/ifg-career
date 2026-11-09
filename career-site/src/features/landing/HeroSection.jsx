@@ -1,44 +1,33 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Link, useNavigate } from 'react-router-dom'
-import { m } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
-import { BriefcaseIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline'
-import { Aurora } from '@shared/ui/Aurora'
+import { m } from 'framer-motion'
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { HeartIcon } from '@heroicons/react/24/solid'
 import { EntityLogo } from '@shared/ui/BrandLogo'
-import { AnimatedNumber } from '@shared/ui/Motion'
-import { WordReveal } from '@shared/ui/WordReveal'
+import { EntityArt } from '@shared/ui/illustrations/EntityArt'
 import { usePrefersReducedMotion } from '@shared/ui/motionPresets'
 import { heroJobsQuery } from '../jobs/api'
-import { EntityCollage } from './EntityCollage'
-import { isPlaceholder } from './api'
-
-const numberLabels = {
-  employees: 'people across the group',
-  years: 'years since 2016',
-  clients: 'clients served',
-  companies: 'companies, one group',
-}
-
-const stripCols = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-2 sm:grid-cols-4' }
 
 /**
- * Section 2 of the guide: motto, company line, Job Search, and the group graphic (or HR's banner image).
- * The search box and company chips take people straight to matching roles.
+ * Section 1 of the career page. Navy with a faint dot grid: on the left the hiring badge, "Be part of our heart",
+ * the group name and motto, the company line, the job search and quick links to each company; on the right the
+ * four companies as illustrated cards; along the bottom the company numbers.
  */
-export function HeroSection({ hero, numbers, entities, interviewSteps = 0 }) {
+export function HeroSection({ hero, entities = [], numbers = null }) {
   const reduced = usePrefersReducedMotion()
   const navigate = useNavigate()
-  const [query, setQuery] = useState('')
-  const enter = (delay) => (reduced ? {} : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay, ease: 'easeOut' } })
-  const image = isPlaceholder(hero?.banner_image) ? null : hero.banner_image
   const jobs = useQuery(heroJobsQuery)
-  const openRoles = jobs.data?.meta?.total
-  const perEntity = jobs.data?.counts?.entity ?? {}
+  const open = jobs.data?.meta?.total
+  const [query, setQuery] = useState('')
+  const enter = (delay) => (reduced ? {} : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] } })
   const stats = [
-    ...Object.entries(numbers ?? {}).filter(([, value]) => Number(value) > 0),
-    ...(entities.length ? [['companies', entities.length]] : []),
-  ]
+    numbers?.years ? { value: `${numbers.years}+`, label: 'years since 2016' } : null,
+    numbers?.employees ? { value: `${Number(numbers.employees).toLocaleString('en-IN')}+`, label: 'people across the group' } : null,
+    entities.length ? { value: String(entities.length), label: entities.length === 1 ? 'company, one group' : 'companies, one group' } : null,
+    numbers?.clients ? { value: `${Number(numbers.clients).toLocaleString('en-IN')}+`, label: 'clients served' } : null,
+  ].filter(Boolean)
 
   function search(event) {
     event.preventDefault()
@@ -47,133 +36,109 @@ export function HeroSection({ hero, numbers, entities, interviewSteps = 0 }) {
   }
 
   return (
-    <section className="relative isolate overflow-hidden bg-ink text-white">
-      <Aurora tone="dark" />
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-dots-light bg-dots [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_75%)]" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-ink to-transparent" aria-hidden="true" />
+    <section className="relative isolate overflow-hidden bg-gradient-to-br from-brand-800 via-navy to-ink text-white" aria-label={hero?.title ?? 'Infolks Group'}>
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(rgba(255,255,255,0.09)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_90%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute -left-40 -top-40 -z-10 h-[34rem] w-[34rem] rounded-full bg-brand-500/30 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute bottom-0 left-1/3 -z-10 h-[24rem] w-[40rem] rounded-full bg-violet/25 blur-3xl" aria-hidden="true" />
 
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-12 pt-10 sm:pt-12 md:pb-16 md:pt-20 lg:grid-cols-[1.15fr_1fr] lg:gap-12 2xl:max-w-7xl">
-        <div className="min-w-0 max-w-xl">
-          <m.p {...enter(0)} className="glass-dark inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium text-white/90">
-            <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 motion-safe:animate-pulse-ring" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            {openRoles ? `We're hiring · ${openRoles} open ${openRoles === 1 ? 'role' : 'roles'}` : "We're hiring across the group"}
-          </m.p>
-          <WordReveal
-            text={hero?.motto ?? 'Grow your career with Infolks Group'}
-            delay={0.1}
-            className="mt-6 font-display text-[clamp(2.15rem,4.2vw+1rem,3.9rem)] font-semibold leading-[1.06] tracking-tight"
-          />
-          {hero?.company_line ? (
-            <m.p {...enter(0.45)} className="mt-6 max-w-lg text-lg leading-relaxed text-white/70">{hero.company_line}</m.p>
-          ) : null}
+      <div className="mx-auto max-w-6xl px-4 pb-14 pt-14 sm:pt-20 lg:pt-24 2xl:max-w-7xl">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10">
+          <div className="min-w-0">
+            {open ? (
+              <m.p {...enter(0)} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold backdrop-blur sm:text-sm">
+                <span className="relative flex h-2 w-2" aria-hidden="true">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 motion-safe:animate-pulse-ring" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                We&rsquo;re hiring · {open} open {open === 1 ? 'role' : 'roles'}
+              </m.p>
+            ) : null}
+            {hero?.eyebrow ? (
+              <m.p {...enter(0.05)} className="mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200 sm:text-sm">
+                <HeartIcon className="h-4 w-4 text-rose-400 motion-safe:animate-heartbeat" aria-hidden="true" />
+                {hero.eyebrow}
+              </m.p>
+            ) : null}
+            <m.h1 {...enter(0.1)} className="mt-3 whitespace-nowrap font-display text-[clamp(2.4rem,6.4vw,4.6rem)] font-semibold leading-[1.02] tracking-tight">
+              {hero?.title ?? 'Infolks Group'}
+            </m.h1>
+            <m.p {...enter(0.18)} className="mt-3 font-display text-[clamp(1.1rem,1.4vw+0.6rem,1.6rem)] font-medium">
+              <span className="bg-gradient-to-r from-cyan-200 via-white to-amber-200 bg-clip-text text-transparent">{hero?.motto ?? 'A company with a heart'}</span>
+            </m.p>
+            {hero?.company_line ? <m.p {...enter(0.24)} className="mt-5 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">{hero.company_line}</m.p> : null}
 
-          <m.form {...enter(0.55)} onSubmit={search} role="search" className="glass-dark mt-8 flex items-center gap-2 rounded-full border p-1.5 pl-4 focus-within:border-cyan/60 focus-within:ring-4 focus-within:ring-cyan/15">
-            <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-white/60" aria-hidden="true" />
-            <label htmlFor="hero-search" className="sr-only">Search roles</label>
-            <input
-              id="hero-search"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Role, skill or company"
-              className="min-h-11 min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-white placeholder:text-white/50 focus:outline-none focus:ring-0"
-            />
-            <button type="submit" className="shine inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-accent-orange to-[#F7B04B] px-5 text-sm font-semibold text-white shadow-[0_10px_30px_-8px_rgba(243,146,35,0.7)] transition duration-200 hover:-translate-y-0.5 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:px-6 sm:text-base">
-              <span className="hidden sm:inline">Job Search</span>
-              <span className="sm:hidden">Search</span>
-            </button>
-          </m.form>
+            <m.form {...enter(0.3)} onSubmit={search} role="search" className="mt-8 flex max-w-xl items-center gap-2 rounded-full border border-white/15 bg-white/10 p-1.5 pl-4 backdrop-blur focus-within:border-cyan/60 focus-within:ring-4 focus-within:ring-cyan/15">
+              <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-white/60" aria-hidden="true" />
+              <label htmlFor="hero-search" className="sr-only">Search roles</label>
+              <input
+                id="hero-search"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Role, skill or company"
+                className="min-h-11 min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-white placeholder:text-white/55 focus:outline-none focus:ring-0"
+              />
+              <button type="submit" className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-gradient-to-r from-accent-orange to-[#F7B04B] px-5 text-sm font-semibold text-white shadow-[0_10px_30px_-8px_rgba(243,146,35,0.7)] transition duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:px-6 sm:text-base">
+                Job Search
+              </button>
+            </m.form>
+
+            {entities.length ? (
+              <m.div {...enter(0.36)} className="mt-5 flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+                <span className="mr-2 text-white/55">Explore</span>
+                {entities.map((entity) => (
+                  <Link key={entity.slug} to={`/jobs?entity=${entity.slug}`} viewTransition className="inline-flex min-h-11 items-center gap-2 rounded-full px-2 font-medium text-white/90 transition duration-200 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                    <EntityLogo entity={entity} size="sm" className="!h-7 !w-7 !rounded-full !bg-white !text-[10px]" />
+                    {entity.name}
+                  </Link>
+                ))}
+              </m.div>
+            ) : null}
+          </div>
 
           {entities.length ? (
-            <m.div {...enter(0.65)} className="mt-5 flex flex-wrap items-center gap-x-1 gap-y-1 text-sm text-white/55">
-              <span className="mr-1">Explore</span>
-              {entities.map((entity) => (
-                <Link
+            <ul className="hidden grid-cols-2 gap-4 sm:grid lg:gap-5" aria-label="Companies in the group">
+              {entities.slice(0, 4).map((entity, index) => (
+                <m.li
                   key={entity.slug}
-                  to={`/jobs?entity=${entity.slug}`}
-                  viewTransition
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full px-2.5 font-medium text-white/85 transition duration-200 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  aria-label={`${entity.name} roles${perEntity[entity.slug] ? `, ${perEntity[entity.slug]} open` : ''}`}
+                  className={index % 2 ? 'translate-y-10' : ''}
+                  {...(reduced ? {} : { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.7, delay: 0.25 + index * 0.08, ease: [0.22, 1, 0.36, 1] } })}
                 >
-                  <EntityLogo entity={entity} size="sm" className="!h-6 !w-6 !rounded-full !bg-white !text-[0.625rem]" />
-                  {entity.name}
-                </Link>
+                  <Link to={`/jobs?entity=${entity.slug}`} viewTransition className="group block rounded-[1.4rem] border border-white/15 bg-white/10 p-2 backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                    <span className="block overflow-hidden rounded-2xl bg-white">
+                      <EntityArt entity={entity} index={index} className="block h-auto w-full transition-transform duration-500 group-hover:scale-[1.03]" />
+                    </span>
+                    <span className="flex items-center gap-2.5 px-1.5 pb-1 pt-2.5">
+                      <EntityLogo entity={entity} size="sm" className="!h-8 !w-8 shrink-0 !bg-white !text-[11px]" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-tight">{entity.name}</span>
+                        <span className="block truncate text-xs text-white/70">{entity.motto}</span>
+                      </span>
+                    </span>
+                  </Link>
+                </m.li>
               ))}
-            </m.div>
+            </ul>
           ) : null}
         </div>
 
-        <m.div className={`relative w-full md:mx-auto md:max-w-xl lg:max-w-none ${image ? '' : 'hidden sm:block'}`} {...(reduced ? {} : { initial: { opacity: 0, scale: 0.94 }, animate: { opacity: 1, scale: 1 }, transition: { duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] } })}>
-          {image ? (
-            <div className="glass-dark rounded-[2rem] border p-2">
-              <img src={image} alt="People at work at Infolks Group" className="aspect-[4/3] w-full rounded-[1.6rem] object-cover" fetchPriority="high" width="800" height="600" />
-            </div>
-          ) : entities.length ? (
-            <EntityCollage entities={entities} />
-          ) : null}
-          {image && openRoles ? (
-            <FloatChip className="left-0 top-[8%] sm:-left-4" delay={0.9} icon={BriefcaseIcon} value={openRoles} label="open roles" />
-          ) : null}
-          {image && interviewSteps ? (
-            <FloatChip className="bottom-[6%] right-0 sm:-right-2" delay={1.05} icon={SparklesIcon} value={interviewSteps} label="step interview" float="[animation-delay:-3s]" />
-          ) : null}
-        </m.div>
-      </div>
-
-      {stats.length ? (
-        <div className="mx-auto max-w-6xl px-4 pb-12 md:pb-16 2xl:max-w-7xl">
-          <dl className={`grid gap-y-6 border-t border-white/10 pt-8 ${stripCols[Math.min(stats.length, 4)]}`}>
-            {stats.slice(0, 4).map(([key, value]) => (
-              <div key={key} className="flex flex-col items-center text-center sm:items-start sm:text-left">
-                <dt className="order-2 mt-1 text-xs text-white/55 sm:text-sm">{numberLabels[key] ?? key}</dt>
-                <dd className="order-1 font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  <AnimatedNumber value={value} />{key === 'companies' ? '' : '+'}
-                </dd>
+        {stats.length ? (
+          <dl className="mt-16 grid grid-cols-3 gap-4 border-t border-white/10 pt-8 lg:mt-20">
+            {stats.slice(0, 3).map((stat) => (
+              <div key={stat.label} className="flex flex-col-reverse">
+                <dt className="mt-1 text-xs text-white/60 sm:text-sm">{stat.label}</dt>
+                <dd className="font-display text-2xl font-semibold sm:text-4xl">{stat.value}</dd>
               </div>
             ))}
           </dl>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </section>
   )
 }
 
 HeroSection.propTypes = {
   hero: PropTypes.object,
+  entities: PropTypes.array,
   numbers: PropTypes.object,
-  entities: PropTypes.array.isRequired,
-  interviewSteps: PropTypes.number,
-}
-
-function FloatChip({ className, delay, icon: Icon, value, label, float = '' }) {
-  const reduced = usePrefersReducedMotion()
-
-  return (
-    <m.div
-      className={`absolute z-10 hidden sm:block ${className}`}
-      {...(reduced ? {} : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay } })}
-    >
-      <div className={`glass-dark flex items-center gap-3 rounded-2xl border px-4 py-3 motion-safe:animate-float-slow ${float}`}>
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-cyan text-white">
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <span className="leading-tight">
-          <span className="block font-display text-lg font-semibold">{value}</span>
-          <span className="block text-xs text-white/70">{label}</span>
-        </span>
-      </div>
-    </m.div>
-  )
-}
-
-FloatChip.propTypes = {
-  className: PropTypes.string,
-  delay: PropTypes.number,
-  icon: PropTypes.elementType.isRequired,
-  value: PropTypes.number.isRequired,
-  label: PropTypes.string.isRequired,
-  float: PropTypes.string,
 }

@@ -26,15 +26,20 @@ async function pickFirst(page, id) {
   await page.getByRole('option').nth(1).click()
 }
 
+/** The job form opens as a modal over the jobs list, so look inside the dialog. */
+const form = (page) => page.getByRole('dialog')
+
 async function fillBasics(page, title) {
   await page.goto('/jobs/new')
-  await page.getByLabel('Title').fill(title)
+  // Headless UI's dialog wrapper has no size of its own, so wait for the modal's heading.
+  await expect(page.getByRole('heading', { name: 'New role' })).toBeVisible()
+  await form(page).getByLabel('Title').fill(title)
   await pickFirst(page, 'entity')
   await pickFirst(page, 'level')
-  await page.getByLabel('Location').fill('Mannarkkad, Kerala')
-  await page.getByLabel('Summary').fill('Build and look after the tools our hiring teams use every day.')
-  await page.getByLabel('Qualification').fill('A degree in computer science or equivalent experience.')
-  await page.getByLabel('Experience').fill('1–3 years')
+  await form(page).getByLabel('Location').fill('Mannarkkad, Kerala')
+  await form(page).getByLabel('Summary').fill('Build and look after the tools our hiring teams use every day.')
+  await form(page).getByLabel('Qualification').fill('A degree in computer science or equivalent experience.')
+  await form(page).getByLabel('Experience').fill('1–3 years')
 }
 
 test.describe('Jobs: create and publish', () => {
@@ -52,7 +57,7 @@ test.describe('Jobs: create and publish', () => {
 
     // Typing a full skill name and moving on still adds it.
     await skills.fill('JavaScript')
-    await page.getByLabel('Location').click()
+    await form(page).getByLabel('Location').click()
     await expect(page.getByRole('button', { name: 'Remove JavaScript' })).toBeVisible()
 
     // HR cannot add new skills, so the box says who can.
@@ -60,10 +65,16 @@ test.describe('Jobs: create and publish', () => {
     await expect(page.getByText('Ask an Admin to add it in Settings → Lists.')).toBeVisible()
     await skills.fill('')
 
-    await page.getByLabel('Last date to apply').fill(isoDate(21))
+    await form(page).getByLabel('Last date to apply').fill(isoDate(21))
     await page.getByRole('button', { name: 'Publish', exact: true }).click()
     await expect(page.getByText('Role published')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Unpublish' })).toBeVisible()
+    // The modal stays open on the published role; Unpublish now sits under More actions.
+    await expect(form(page).getByText('Published', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'More actions' }).click()
+    await expect(page.getByRole('menuitem', { name: 'Unpublish' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: 'Done' }).click()
+    await expect(page).toHaveURL(/\/jobs$/)
   })
 
   test('a past last date is refused with a clear message', async ({ page }) => {
@@ -73,7 +84,7 @@ test.describe('Jobs: create and publish', () => {
     await skills.fill('PHP')
     await skills.press('Enter')
 
-    const date = page.getByLabel('Last date to apply')
+    const date = form(page).getByLabel('Last date to apply')
     await expect(date).toHaveAttribute('min', isoDate(0))
     await date.fill(isoDate(-3))
     await page.getByRole('button', { name: 'Publish', exact: true }).click()
@@ -92,7 +103,7 @@ test.describe('Jobs: create and publish', () => {
     await expect(page.getByText(`Added "${name}" to the skills list.`)).toBeVisible()
     await expect(page.getByRole('button', { name: `Remove ${name}` })).toBeVisible()
 
-    await page.getByLabel('Last date to apply').fill(isoDate(10))
+    await form(page).getByLabel('Last date to apply').fill(isoDate(10))
     await page.getByRole('button', { name: 'Publish', exact: true }).click()
     await expect(page.getByText('Role published')).toBeVisible()
   })

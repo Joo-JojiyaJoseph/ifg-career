@@ -7,9 +7,9 @@ import { usePrefersReducedMotion } from '@shared/ui/motionPresets'
 import { SectionHeading } from './SectionHeading'
 
 /**
- * Section 8: questions that open one at a time. Also publishes FAQPage structured data for search.
+ * Section 6: "A few things you might want to know". Numbered questions that open one at a time. Also publishes FAQPage structured data for search.
  */
-export function FaqSection({ faqs = [] }) {
+export function FaqSection({ faqs = [], section }) {
   const [open, setOpen] = useState(faqs[0]?.id ?? null)
   const reduced = usePrefersReducedMotion()
 
@@ -34,14 +34,14 @@ export function FaqSection({ faqs = [] }) {
   if (!faqs.length) return null
 
   return (
-    <section className="relative isolate overflow-hidden bg-white pb-16 pt-20 md:pb-20 md:pt-28" aria-labelledby="faq-title">
+    <section className="bg-white py-20 md:py-28" aria-labelledby="faq-title">
       <div className="mx-auto max-w-3xl px-4">
-        <SectionHeading id="faq-title" eyebrow="Good to know" title="Frequently asked questions" />
+        <SectionHeading id="faq-title" eyebrow="Good to know" title={section?.title ?? 'A few things you might want to know'} />
         <ul className="flex flex-col gap-3">
-          {faqs.map((faq) => {
+          {faqs.map((faq, index) => {
             const expanded = open === faq.id
             return (
-              <li key={faq.id} className={`overflow-hidden rounded-2xl border bg-white transition duration-200 ${expanded ? 'border-brand-200 shadow-lift' : 'border-border hover:border-brand-200 hover:shadow-card'}`}>
+              <li key={faq.id} className={`overflow-hidden rounded-2xl border bg-white transition duration-200 ${expanded ? 'border-brand-200 shadow-card' : 'border-border hover:border-brand-200'}`}>
                 <h3>
                   <button
                     type="button"
@@ -51,7 +51,10 @@ export function FaqSection({ faqs = [] }) {
                     onClick={() => setOpen(expanded ? null : faq.id)}
                     className="flex min-h-16 w-full items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left font-display font-medium text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   >
-                    {faq.question}
+                    <span className="flex items-baseline gap-3">
+                      <span className={`font-display text-sm font-semibold tabular-nums transition-colors duration-200 ${expanded ? 'text-brand-600' : 'text-muted'}`}>{String(index + 1).padStart(2, '0')}</span>
+                      <span>{faq.question}</span>
+                    </span>
                     <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition duration-200 ${expanded ? 'rotate-180 bg-gradient-to-br from-brand-500 to-brand-700 text-white' : 'bg-brand-50 text-brand-700'}`}>
                       {expanded ? <MinusIcon className="h-5 w-5" aria-hidden="true" /> : <PlusIcon className="h-5 w-5" aria-hidden="true" />}
                     </span>
@@ -69,7 +72,7 @@ export function FaqSection({ faqs = [] }) {
                       transition={{ duration: 0.22, ease: 'easeOut' }}
                       className="overflow-hidden"
                     >
-                      <SafeHtml html={faq.answer} className="prose prose-sm max-w-none px-5 pb-5 text-muted prose-a:text-brand-700" />
+                      <SafeHtml html={faq.answer} className="prose prose-sm max-w-none px-5 pb-5 pl-[3.25rem] text-muted prose-a:text-brand-700" />
                     </m.div>
                   ) : null}
                 </AnimatePresence>
@@ -82,4 +85,4 @@ export function FaqSection({ faqs = [] }) {
   )
 }
 
-FaqSection.propTypes = { faqs: PropTypes.array }
+FaqSection.propTypes = { faqs: PropTypes.array, section: PropTypes.shape({ title: PropTypes.string }) }

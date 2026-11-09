@@ -58,3 +58,14 @@ export async function saveEntity(slug, values) {
   const { data } = await client.post(`/api/v1/hr/content/entities/${slug}`, toBody(values))
   return data.data
 }
+
+export async function createEntity(values) {
+  await ensureCsrf()
+  const { data } = await client.post('/api/v1/hr/content/entities', toBody(values))
+  return data.data
+}
+
+export async function deleteEntity(slug) {
+  await ensureCsrf()
+  await client.delete(`/api/v1/hr/content/entities/${slug}`)
+}

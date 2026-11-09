@@ -33,6 +33,17 @@ abstract class HrNotification extends Notification implements ShouldQueue
     }
 
     /**
+     * The bell entry is written straight away, so it appears even when no queue worker is running;
+     * only the email copy waits on the queue.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(object $notifiable): array

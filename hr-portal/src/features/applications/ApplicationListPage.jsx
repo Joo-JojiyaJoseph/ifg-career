@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AdjustmentsHorizontalIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { Badge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
@@ -12,9 +12,11 @@ import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { FilterBar } from '@shared/ui/FilterBar'
 import { FilterChips } from '@shared/ui/FilterChips'
+import { FilterPanel } from '@shared/ui/FilterPanel'
+import { FilterToolbar, QuickFilter } from '@shared/ui/FilterToolbar'
 import { FormField } from '@shared/ui/FormField'
 import { Input } from '@shared/ui/Input'
-import { Modal, SlideOver } from '@shared/ui/Modal'
+import { Modal } from '@shared/ui/Modal'
 import { Pagination } from '@shared/ui/Pagination'
 import { ResultCount } from '@shared/ui/ResultCount'
 import { SavedFilters } from '@shared/ui/SavedFilters'
@@ -53,6 +55,7 @@ const emptyFilters = {
   department: '',
   level: '',
   source: '',
+  gender: '',
   referred: '',
   status: '',
   result: '',
@@ -274,15 +277,17 @@ export function ApplicationListPage() {
           </button>
         ))}
       </div>
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <div className="flex-1">
-          <SearchInput ref={searchRef} id="application-search" value={filters.q} onChange={(q) => update({ q })} placeholder="Search name, email or role" label="Search applications" />
-        </div>
-        <Button className="lg:hidden" variant="secondary" icon={AdjustmentsHorizontalIcon} onClick={() => { setDraft(filters); setOpen(true) }}>Filters</Button>
-      </div>
-      <div className="hidden lg:block">
-        <ApplicationFilters values={filters} onChange={update} meta={meta.data} entities={entities.data ?? []} />
-      </div>
+      <FilterToolbar
+        search={<SearchInput ref={searchRef} id="application-search" value={filters.q} onChange={(q) => update({ q })} placeholder="Search name, email or role" label="Search applications" />}
+        quick={
+          <>
+            <QuickFilter id="quick-entity" label="Entity" value={filters.entity} onChange={(entity) => update({ entity })} options={[{ value: '', label: 'All entities' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />
+            <QuickFilter id="quick-status" label="Status" value={filters.status} onChange={(status) => update({ status })} options={[{ value: '', label: 'All statuses' }, ...asList(meta.data?.enums?.application_statuses).map((item) => ({ value: item.value, label: item.label }))]} />
+          </>
+        }
+        activeCount={chips.filter((chip) => chip.key !== 'q').length}
+        onOpen={() => { setDraft(filters); setOpen(true) }}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ResultCount count={total} noun="applications" />
         <FilterChips chips={chips} onClear={clearAll} />
@@ -346,12 +351,16 @@ export function ApplicationListPage() {
         onDelete={(item) => deleteMutation.mutate(item.id)}
         onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
       />
-      <SlideOver open={open} onClose={() => setOpen(false)} title="Filters">
-        <div className="flex flex-col gap-4">
-          <ApplicationFilters values={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} meta={meta.data} entities={entities.data ?? []} />
-          <Button className="w-full" onClick={() => { applyQuery(currentQuery(draft)); setOpen(false) }}>Apply filters</Button>
-        </div>
-      </SlideOver>
+      <FilterPanel
+        open={open}
+        onClose={() => setOpen(false)}
+        activeCount={chips.filter((chip) => chip.key !== 'q').length}
+        onClear={() => { clearAll(); setOpen(false) }}
+        onApply={() => { applyQuery(currentQuery(draft)); setOpen(false) }}
+        applyLabel="Show results"
+      >
+        <ApplicationFilters values={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} meta={meta.data} entities={entities.data ?? []} />
+      </FilterPanel>
       <ScheduleRoundPanel open={Boolean(scheduleTarget)} onClose={() => setScheduleTarget(null)} application={scheduleTarget} />
       <Modal open={Boolean(assignTarget)} onClose={() => setAssignTarget(null)} title="Assign to a role">
         <FormField id="assign-job" label="Open role">
@@ -389,6 +398,9 @@ function ApplicationFilters({ values, onChange, meta, entities }) {
       </FormField>
       <FormField id="app-source" label="Source">
         <Select id="app-source" value={values.source} onChange={(source) => onChange({ source })} options={[{ value: '', label: 'All sources' }, ...asList(enums.application_sources).map((item) => ({ value: item.value, label: item.label }))]} />
+      </FormField>
+      <FormField id="app-gender" label="Gender">
+        <Select id="app-gender" value={values.gender} onChange={(gender) => onChange({ gender })} options={[{ value: '', label: 'All' }, ...asList(enums.genders).map((item) => ({ value: item.value, label: item.label }))]} />
       </FormField>
       <FormField id="app-status" label="Status">
         <Select id="app-status" value={values.status} onChange={(status) => onChange({ status })} options={[{ value: '', label: 'All statuses' }, ...asList(enums.application_statuses).map((item) => ({ value: item.value, label: item.label }))]} />
@@ -498,6 +510,7 @@ function buildChips(filters, meta, entities, update) {
   if (filters.job) chips.push({ key: 'job', label: filters.job, onRemove: () => remove('job') })
   if (filters.status) chips.push({ key: 'status', label: label('application_statuses', filters.status), onRemove: () => remove('status') })
   if (filters.source) chips.push({ key: 'source', label: label('application_sources', filters.source), onRemove: () => remove('source') })
+  if (filters.gender) chips.push({ key: 'gender', label: label('genders', filters.gender), onRemove: () => remove('gender') })
   if (filters.flagged === '1') chips.push({ key: 'flagged', label: 'Flagged', onRemove: () => remove('flagged') })
   if (filters.referred === '1') chips.push({ key: 'referred', label: 'Referred', onRemove: () => remove('referred') })
   return chips

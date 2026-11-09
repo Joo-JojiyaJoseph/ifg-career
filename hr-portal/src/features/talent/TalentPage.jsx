@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Suspense, useMemo, useState } from 'react'
+import { Link, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ArrowDownTrayIcon, EnvelopeIcon, MegaphoneIcon, NewspaperIcon, UsersIcon } from '@heroicons/react/24/outline'
 import { Badge } from '@shared/ui/Badge'
@@ -14,6 +14,8 @@ import { Modal } from '@shared/ui/Modal'
 import { Pagination } from '@shared/ui/Pagination'
 import { ProgressBar } from '@shared/ui/ProgressBar'
 import { ResultCount } from '@shared/ui/ResultCount'
+import { FilterPanel } from '@shared/ui/FilterPanel'
+import { FilterToolbar, QuickFilter } from '@shared/ui/FilterToolbar'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -58,9 +60,15 @@ export function TalentPage() {
         label="Talent community views"
       />
       {view === 'members' ? <MembersView params={params} update={update} /> : <CampaignsView params={params} update={update} />}
+      {/* The campaign composer opens here as a modal (child route /talent/new). */}
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
     </div>
   )
 }
+
+const memberFilterKeys = ['subscribed', 'source', 'linked', 'joined_from', 'joined_to']
 
 function MembersView({ params, update }) {
   const toast = useToast()
@@ -72,6 +80,8 @@ function MembersView({ params, update }) {
   const counts = list.data?.counts ?? {}
   const rows = list.data?.data ?? []
   const columns = useMemo(() => memberColumns(), [])
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const activeCount = memberFilterKeys.filter((key) => filters[key]).length
 
   return (
     <>
@@ -80,15 +90,21 @@ function MembersView({ params, update }) {
         <Stat label="Unsubscribed" value={counts.unsubscribed ?? 0} tone="text-muted" />
         <Stat label="Joined via sign-up form" value={counts.source?.signup_form ?? 0} tone="text-brand-700" />
       </div>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-        <div className="flex-1">
-          <SearchInput id="talent-search" value={filters.q ?? ''} onChange={(q) => update({ q })} placeholder="Search name, email or phone" label="Search members" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <FilterToolbar
+            search={<SearchInput id="talent-search" value={filters.q ?? ''} onChange={(q) => update({ q })} placeholder="Search name, email or phone" label="Search members" />}
+            quick={<QuickFilter id="quick-subscribed" label="Subscription" value={filters.subscribed ?? ''} onChange={(subscribed) => update({ subscribed })} options={[{ value: '', label: 'Everyone' }, { value: '1', label: 'Subscribed' }, { value: '0', label: 'Unsubscribed' }]} />}
+            activeCount={activeCount}
+            onOpen={() => setFiltersOpen(true)}
+          />
         </div>
         {user?.permissions?.includes('talent.export') ? (
           <Button variant="secondary" icon={ArrowDownTrayIcon} onClick={() => exporter.start(query).catch((error) => toast.push({ tone: 'error', message: error.message }))}>Export</Button>
         ) : null}
       </div>
-      <FilterBar className="md:grid-cols-5">
+      <FilterPanel open={filtersOpen} onClose={() => setFiltersOpen(false)} activeCount={activeCount} onClear={() => update(Object.fromEntries(memberFilterKeys.map((key) => [key, ''])))}>
+      <FilterBar>
         <FormField id="tm-subscribed" label="Subscription">
           <Select id="tm-subscribed" value={filters.subscribed ?? ''} onChange={(subscribed) => update({ subscribed })} options={[{ value: '', label: 'Everyone' }, { value: '1', label: 'Subscribed' }, { value: '0', label: 'Unsubscribed' }]} />
         </FormField>
@@ -105,6 +121,7 @@ function MembersView({ params, update }) {
           <DateInput id="tm-to" value={filters.joined_to ?? ''} onChange={(joined_to) => update({ joined_to })} />
         </FormField>
       </FilterBar>
+      </FilterPanel>
       <ResultCount count={list.data?.meta?.total ?? 0} noun="members" />
       {list.isLoading ? <Skeleton className="h-64" /> : null}
       {list.isError ? <ErrorState onRetry={() => list.refetch()} /> : null}

@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import PropTypes from 'prop-types'
 
@@ -10,6 +10,8 @@ import PropTypes from 'prop-types'
  */
 export function MultiSelect({ id, value = [], onChange, options, placeholder = 'Search and add', describedBy, invalid = false, onCreate, createHint, noun = 'item' }) {
   const [query, setQuery] = useState('')
+  // Leaving the box closes the list shortly after; coming straight back must cancel that.
+  const closeTimer = useRef(null)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const [creating, setCreating] = useState(false)
@@ -94,11 +96,14 @@ export function MultiSelect({ id, value = [], onChange, options, placeholder = '
             setOpen(true)
             setActive(0)
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            clearTimeout(closeTimer.current)
+            setOpen(true)
+          }}
           onBlur={() => {
             // Typing a name that exists and leaving the box still adds it.
             if (exact && !value.includes(exact.value)) add(exact.value)
-            setTimeout(() => setOpen(false), 150)
+            closeTimer.current = setTimeout(() => setOpen(false), 150)
           }}
           onKeyDown={onKeyDown}
           placeholder={value.length ? '' : placeholder}

@@ -160,7 +160,7 @@ it('serves the public content payload with an ETag and hides unpublished items',
 
     $response = $this->getJson('/api/v1/public/content')
         ->assertOk()
-        ->assertJsonStructure(['data' => ['hero', 'about' => ['blocks'], 'interview_steps', 'stories', 'drives', 'faqs', 'recognitions', 'social_links', 'footer', 'entities']])
+        ->assertJsonStructure(['data' => ['hero', 'sections' => ['entities', 'interview', 'quick_apply', 'faq'], 'about' => ['blocks'], 'interview_steps', 'stories', 'drives', 'faqs', 'recognitions', 'social_links', 'footer', 'entities']])
         ->assertJsonMissing(['question' => 'Hidden?']);
 
     $this->getJson('/api/v1/public/content', ['If-None-Match' => $response->headers->get('ETag')])->assertStatus(304);

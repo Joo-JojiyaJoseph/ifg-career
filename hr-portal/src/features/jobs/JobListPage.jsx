@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AdjustmentsHorizontalIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
 import { DataTable } from '@shared/ui/DataTable'
@@ -11,6 +11,8 @@ import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { FilterBar } from '@shared/ui/FilterBar'
 import { FilterChips } from '@shared/ui/FilterChips'
+import { FilterPanel } from '@shared/ui/FilterPanel'
+import { FilterToolbar, QuickFilter } from '@shared/ui/FilterToolbar'
 import { FormField } from '@shared/ui/FormField'
 import { Checkbox, Input } from '@shared/ui/Input'
 import { MultiSelect } from '@shared/ui/MultiSelect'
@@ -19,7 +21,6 @@ import { ResultCount } from '@shared/ui/ResultCount'
 import { SavedFilters } from '@shared/ui/SavedFilters'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
-import { SlideOver } from '@shared/ui/Modal'
 import { StatusBadge } from '@shared/ui/Badge'
 import { useToast } from '@shared/ui/Toast'
 import { formatDate } from '@shared/lib/formatDate'
@@ -54,6 +55,7 @@ const emptyFilters = {
 }
 
 export function JobListPage() {
+  const { search } = useLocation()
   const { user } = useAuth()
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -163,19 +165,19 @@ export function JobListPage() {
       <PageHeader
         title="Jobs"
         subtitle="Create, publish and close roles across Infolks Group."
-        actions={canManage ? <Link to="/jobs/new" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-r from-brand-600 to-brand-500 px-5 text-sm font-medium text-white"><PlusIcon className="h-5 w-5" /> New role</Link> : null}
+        actions={canManage ? <Link to={`/jobs/new${search}`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-r from-brand-600 to-brand-500 px-5 text-sm font-medium text-white"><PlusIcon className="h-5 w-5" /> New role</Link> : null}
       />
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <div className="flex-1">
-          <SearchInput ref={searchRef} id="job-search" value={filters.q} onChange={(q) => update({ q })} placeholder="Search roles" label="Search roles" />
-        </div>
-        <Button className="lg:hidden" variant="secondary" icon={AdjustmentsHorizontalIcon} onClick={() => { setDraft(filters); setOpen(true) }}>
-          Filters
-        </Button>
-      </div>
-      <div className="hidden lg:block">
-        <JobFilters values={filters} onChange={update} meta={meta.data} entities={entities.data ?? []} />
-      </div>
+      <FilterToolbar
+        search={<SearchInput ref={searchRef} id="job-search" value={filters.q} onChange={(q) => update({ q })} placeholder="Search roles" label="Search roles" />}
+        quick={
+          <>
+            <QuickFilter id="quick-entity" label="Entity" value={filters.entity} onChange={(entity) => update({ entity })} options={[{ value: '', label: 'All entities' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />
+            <QuickFilter id="quick-status" label="Status" value={filters.status} onChange={(status) => update({ status })} options={[{ value: '', label: 'All statuses' }, ...asList(meta.data?.enums?.job_statuses).map((item) => ({ value: item.value, label: item.label }))]} />
+          </>
+        }
+        activeCount={chips.filter((chip) => chip.key !== 'q').length}
+        onOpen={() => { setDraft(filters); setOpen(true) }}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ResultCount count={total} noun="roles" />
         <FilterChips chips={chips} onClear={clearAll} />
@@ -227,14 +229,20 @@ export function JobListPage() {
         onDelete={(item) => deleteMutation.mutate(item.id)}
         onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
       />
-      <SlideOver open={open} onClose={() => setOpen(false)} title="Filters">
-        <div className="flex flex-col gap-4">
-          <JobFilters values={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} meta={meta.data} entities={entities.data ?? []} />
-          <Button className="sticky bottom-0 w-full" onClick={() => { applyQuery({ ...currentQuery(draft), sort: draft.sort, direction: draft.direction }); setOpen(false) }}>
-            Apply filters ({draftCount.isFetching ? '…' : draftCount.data?.meta?.total ?? 0})
-          </Button>
-        </div>
-      </SlideOver>
+      {/* New role and Edit role open here as modals (child routes). */}
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
+      <FilterPanel
+        open={open}
+        onClose={() => setOpen(false)}
+        activeCount={chips.filter((chip) => chip.key !== 'q').length}
+        onClear={() => { clearAll(); setOpen(false) }}
+        onApply={() => { applyQuery({ ...currentQuery(draft), sort: draft.sort, direction: draft.direction }); setOpen(false) }}
+        applyLabel={`Show ${draftCount.isFetching ? '…' : draftCount.data?.meta?.total ?? 0} roles`}
+      >
+        <JobFilters values={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} meta={meta.data} entities={entities.data ?? []} />
+      </FilterPanel>
     </div>
   )
 }
@@ -242,7 +250,7 @@ export function JobListPage() {
 function JobSummary({ job }) {
   return (
     <div>
-      <Link className="font-medium text-brand-700" to={`/jobs/${job.public_id}/edit`}>{job.title}</Link>
+      <Link className="font-medium text-brand-700" to={`/jobs/${job.public_id}/edit${window.location.search}`}>{job.title}</Link>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <EntityBadge entity={job.entity} />
         <StatusBadge status={job.status} />
@@ -303,7 +311,7 @@ function JobFilters({ values, onChange, meta, entities }) {
 
 function jobColumns() {
   return [
-    { id: 'title', accessorKey: 'title', header: 'Title', cell: ({ row }) => <Link className="font-medium text-brand-700" to={`/jobs/${row.original.public_id}/edit`}>{row.original.title}</Link> },
+    { id: 'title', accessorKey: 'title', header: 'Title', cell: ({ row }) => <Link className="font-medium text-brand-700" to={`/jobs/${row.original.public_id}/edit${window.location.search}`}>{row.original.title}</Link> },
     { id: 'entity', header: 'Entity', enableSorting: false, cell: ({ row }) => <EntityBadge entity={row.original.entity} /> },
     { id: 'department', header: 'Department', enableSorting: false, cell: ({ row }) => row.original.department?.name || '—' },
     { id: 'level', header: 'Level', enableSorting: false, cell: ({ row }) => row.original.level?.label || '—' },

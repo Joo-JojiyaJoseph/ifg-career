@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AdjustmentsHorizontalIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { Badge, StatusBadge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
@@ -12,6 +12,8 @@ import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { FilterBar } from '@shared/ui/FilterBar'
 import { FilterChips } from '@shared/ui/FilterChips'
+import { FilterPanel } from '@shared/ui/FilterPanel'
+import { FilterToolbar, QuickFilter } from '@shared/ui/FilterToolbar'
 import { FormField } from '@shared/ui/FormField'
 import { Input } from '@shared/ui/Input'
 import { Pagination } from '@shared/ui/Pagination'
@@ -19,7 +21,6 @@ import { ResultCount } from '@shared/ui/ResultCount'
 import { SavedFilters } from '@shared/ui/SavedFilters'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
-import { SlideOver } from '@shared/ui/Modal'
 import { useToast } from '@shared/ui/Toast'
 import { formatDate } from '@shared/lib/formatDate'
 import { useSlashFocus } from '@shared/hooks/useSlashFocus'
@@ -165,17 +166,17 @@ export function CandidateListPage() {
         subtitle="Search profiles, review applications and export the current list."
         actions={canExport ? <Button variant="secondary" icon={ArrowDownTrayIcon} onClick={exportList}>Export</Button> : null}
       />
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <div className="flex-1">
-          <SearchInput ref={searchRef} id="candidate-search" value={filters.q} onChange={(q) => update({ q })} placeholder="Search name, email or phone" label="Search candidates" />
-        </div>
-        <Button className="lg:hidden" variant="secondary" icon={AdjustmentsHorizontalIcon} onClick={() => { setDraft(filters); setOpen(true) }}>
-          Filters
-        </Button>
-      </div>
-      <div className="hidden lg:block">
-        <CandidateFilters values={filters} onChange={update} meta={meta.data} entities={entities.data ?? []} />
-      </div>
+      <FilterToolbar
+        search={<SearchInput ref={searchRef} id="candidate-search" value={filters.q} onChange={(q) => update({ q })} placeholder="Search name, email or phone" label="Search candidates" />}
+        quick={
+          <>
+            <QuickFilter id="quick-entity" label="Entity applied to" value={filters.entity} onChange={(entity) => update({ entity })} options={[{ value: '', label: 'All entities' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />
+            <QuickFilter id="quick-colour" label="Colour tag" value={filters.colour_tag} onChange={(colour_tag) => update({ colour_tag })} options={[{ value: '', label: 'All colour tags' }, ...asList(meta.data?.enums?.colour_tags).map((item) => ({ value: item.value, label: item.label }))]} />
+          </>
+        }
+        activeCount={chips.filter((chip) => chip.key !== 'q').length}
+        onOpen={() => { setDraft(filters); setOpen(true) }}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ResultCount count={total} noun="candidates" />
         <FilterChips chips={chips} onClear={clearAll} />
@@ -217,14 +218,16 @@ export function CandidateListPage() {
         onDelete={(item) => deleteMutation.mutate(item.id)}
         onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
       />
-      <SlideOver open={open} onClose={() => setOpen(false)} title="Filters">
-        <div className="flex flex-col gap-4">
-          <CandidateFilters values={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} meta={meta.data} entities={entities.data ?? []} />
-          <Button className="sticky bottom-0 w-full" onClick={() => { applyQuery(currentQuery(draft)); setOpen(false) }}>
-            Apply filters ({draftCount.isFetching ? '…' : draftCount.data?.meta?.total ?? 0})
-          </Button>
-        </div>
-      </SlideOver>
+      <FilterPanel
+        open={open}
+        onClose={() => setOpen(false)}
+        activeCount={chips.filter((chip) => chip.key !== 'q').length}
+        onClear={() => { clearAll(); setOpen(false) }}
+        onApply={() => { applyQuery(currentQuery(draft)); setOpen(false) }}
+        applyLabel={`Show ${draftCount.isFetching ? '…' : draftCount.data?.meta?.total ?? 0} candidates`}
+      >
+        <CandidateFilters values={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} meta={meta.data} entities={entities.data ?? []} />
+      </FilterPanel>
     </div>
   )
 }

@@ -2,93 +2,88 @@ import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import { ArrowTopRightOnSquareIcon, EnvelopeIcon, MapPinIcon, PhoneIcon } from '@heroicons/react/24/outline'
 import { GROUP } from '@shared/brand'
-import { Aurora } from '@shared/ui/Aurora'
 import { EntityLogo, GroupLogo } from '@shared/ui/BrandLogo'
+import { useQuickApply } from '../apply/quickApplyContext'
 import { SocialIcon } from './SocialIcon'
 
-const explore = [
-  { to: '/', label: 'Careers home' },
-  { to: '/jobs', label: 'Job Search' },
-  { to: '/jobs?level=internship', label: 'Internships' },
-  { to: '/#quick-apply', label: 'Quick apply', hash: true },
-  { to: '/privacy', label: 'Privacy' },
-]
+const DEFAULT_CLOSING = 'Every new person brings a new perspective, a new possibility, and another story to be part of. We look forward to discovering yours.'
+const host = (url) => url?.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
 /**
- * Second half of section 9: the group, its four companies, links, contact and social media.
- * Used on every careers page.
+ * Section 7, on every careers page, in navy. The group with its closing message and contact details, the four
+ * companies with links to their websites, the quick links and social media, and a thin copyright line.
  */
 export function SiteFooter({ footer: setting, social = [], entities = [] }) {
+  const { openQuickApply, openJobAlerts } = useQuickApply()
   const footer = setting ?? {}
   const year = new Date().getFullYear()
-  const linkClass = 'inline-flex min-h-11 items-center gap-2 text-sm text-white/70 transition duration-200 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded'
+  const linkClass = 'inline-flex min-h-11 items-center rounded text-sm text-white/75 transition duration-200 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white'
+  const links = [
+    { to: '/', label: 'Careers' },
+    { to: '/jobs', label: 'Job Search' },
+    { to: '/jobs?level=internship', label: 'Internship' },
+    { href: '/#quick-apply', label: 'Quick Apply', onClick: openQuickApply },
+    footer.contact_email ? { href: `mailto:${footer.contact_email}`, label: 'Contact Us' } : { href: '#footer-contact', label: 'Contact Us' },
+    { to: '/privacy', label: 'Privacy' },
+  ]
 
   return (
-    <footer className="relative isolate overflow-hidden bg-ink text-white">
-      <Aurora tone="dark" className="opacity-40" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan/60 to-transparent" aria-hidden="true" />
-
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-[1.3fr_1.2fr_0.8fr] 2xl:max-w-7xl">
-        <div className="flex flex-col gap-5">
-          <GroupLogo tone="dark" className="self-start" />
-          <p className="max-w-xs text-sm leading-relaxed text-white/70">
-            {footer.tagline ?? GROUP.tagline}. Four companies working in data labeling, AI data collection, medical annotation and software.
-          </p>
-          <ul className="flex flex-col text-sm text-white/75">
-            {footer.address ? (
-              <li className="flex items-start gap-2 py-2"><MapPinIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{footer.address}</li>
-            ) : null}
-            {footer.contact_email ? (
-              <li><a href={`mailto:${footer.contact_email}`} className={linkClass}><EnvelopeIcon className="h-4 w-4" aria-hidden="true" />{footer.contact_email}</a></li>
-            ) : null}
-            {footer.contact_phone ? (
-              <li><a href={`tel:${footer.contact_phone.replace(/\s/g, '')}`} className={linkClass}><PhoneIcon className="h-4 w-4" aria-hidden="true" />{footer.contact_phone}</a></li>
-            ) : null}
+    <footer className="relative isolate overflow-hidden bg-gradient-to-br from-brand-900 via-navy to-ink text-white">
+      <div className="pointer-events-none absolute -right-40 -top-40 -z-10 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl" aria-hidden="true" />
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-[1.3fr_1.2fr_0.8fr] lg:gap-12 2xl:max-w-7xl">
+        <div id="footer-contact" className="flex flex-col gap-5">
+          <Link to="/" viewTransition className="self-start rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Back to the careers home page">
+            <GroupLogo tone="dark" />
+          </Link>
+          <p className="max-w-sm text-sm leading-relaxed text-white/75">{footer.closing_text || DEFAULT_CLOSING}</p>
+          <ul className="flex flex-col text-sm text-white/80">
+            {footer.address ? <li className="flex items-start gap-2.5 py-2"><MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" aria-hidden="true" /><span className="leading-relaxed">{footer.address}</span></li> : null}
+            {footer.contact_email ? <li><a href={`mailto:${footer.contact_email}`} className={`${linkClass} gap-2.5 break-all`}><EnvelopeIcon className="h-4 w-4 shrink-0 text-cyan-200" aria-hidden="true" />{footer.contact_email}</a></li> : null}
+            {footer.contact_phone ? <li><a href={`tel:${footer.contact_phone.replace(/\s/g, '')}`} className={`${linkClass} gap-2.5`}><PhoneIcon className="h-4 w-4 shrink-0 text-cyan-200" aria-hidden="true" />{footer.contact_phone}</a></li> : null}
           </ul>
         </div>
 
         {entities.length ? (
-          <nav aria-labelledby="footer-companies">
-            <h2 id="footer-companies" className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">Our companies</h2>
-            <ul className="mt-4 grid gap-2 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Our companies</h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
               {entities.map((entity) => (
                 <li key={entity.slug}>
                   <a
                     href={entity.website_url || `/jobs?entity=${entity.slug}`}
                     {...(entity.website_url ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
-                    className="glass-dark group flex min-h-14 items-center gap-3 rounded-2xl border p-2 pr-3 transition duration-200 hover:-translate-y-0.5 hover:bg-white/[0.14] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="group flex min-h-14 items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.06] px-3 py-2.5 transition duration-200 hover:-translate-y-0.5 hover:bg-white/[0.12] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <EntityLogo entity={entity} size="sm" className="!bg-white" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-semibold">{entity.name}</span>
-                      {entity.website_url ? <span className="block truncate text-xs text-white/60">{entity.website_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span> : null}
+                      {entity.website_url ? <span className="block truncate text-xs text-white/60">{host(entity.website_url)}</span> : null}
                     </span>
-                    {entity.website_url ? (
-                      <>
-                        <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-white/50 transition duration-200 group-hover:text-white" aria-hidden="true" />
-                        <span className="sr-only">(opens in a new tab)</span>
-                      </>
-                    ) : null}
+                    {entity.website_url ? <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0 text-white/50 transition group-hover:text-white" aria-hidden="true" /> : null}
+                    {entity.website_url ? <span className="sr-only">(opens in a new tab)</span> : null}
                   </a>
                 </li>
               ))}
             </ul>
-          </nav>
+          </div>
         ) : null}
 
-        <div className="flex flex-col gap-6">
-          <nav aria-labelledby="footer-explore">
-            <h2 id="footer-explore" className="text-xs font-semibold uppercase tracking-[0.16em] text-white/50">Explore</h2>
+        <div>
+          <nav aria-label="Footer">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Quick links</h2>
             <ul className="mt-2 flex flex-col">
-              {explore.map((item) => (
-                <li key={item.to}>
-                  {item.hash ? <a className={linkClass} href={item.to}>{item.label}</a> : <Link className={linkClass} to={item.to} viewTransition>{item.label}</Link>}
+              {links.map((item) => (
+                <li key={item.label}>
+                  {item.to ? <Link className={linkClass} to={item.to} viewTransition>{item.label}</Link> : <a className={linkClass} href={item.href} onClick={item.onClick}>{item.label}</a>}
                 </li>
               ))}
+              <li>
+                <button type="button" onClick={openJobAlerts} className={linkClass}>Get job alerts</button>
+              </li>
             </ul>
           </nav>
           {social.length ? (
-            <ul className="flex flex-wrap gap-2" aria-label="Infolks Group on social media">
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label="Social media">
               {social.map((link) => (
                 <li key={link.name}>
                   <a
@@ -96,7 +91,8 @@ export function SiteFooter({ footer: setting, social = [], entities = [] }) {
                     target="_blank"
                     rel="noreferrer noopener"
                     aria-label={`${link.name} (opens in a new tab)`}
-                    className="glass-dark flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    title={link.name}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/85 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                   >
                     <SocialIcon name={link.name} />
                   </a>
@@ -108,13 +104,20 @@ export function SiteFooter({ footer: setting, social = [], entities = [] }) {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-xs 2xl:max-w-7xl text-white/60 sm:flex-row">
-          <p>© {year} {footer.copyright ?? 'Infolks Group. All rights reserved.'}</p>
-          <a href={GROUP.website} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-11 items-center hover:text-white">infolksgroup.com</a>
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-1 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-xs text-white/60 sm:flex-row 2xl:max-w-7xl">
+          <p>© {year} {footer.copyright ?? 'Infolks Group. All Rights Reserved.'}</p>
+          <a href={GROUP.website} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-11 items-center hover:text-white">
+            {host(GROUP.website)}<span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </div>
       </div>
     </footer>
   )
 }
 
-SiteFooter.propTypes = { footer: PropTypes.object, social: PropTypes.array, entities: PropTypes.array }
+SiteFooter.propTypes = {
+  footer: PropTypes.object,
+  social: PropTypes.array,
+  /** The group's companies, linked to their own websites. */
+  entities: PropTypes.array,
+}

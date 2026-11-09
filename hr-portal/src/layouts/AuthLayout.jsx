@@ -1,20 +1,33 @@
 import { Outlet } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { m } from 'framer-motion'
 import { CalendarDaysIcon, InboxStackIcon, LockClosedIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { Aurora } from '@shared/ui/Aurora'
 import { GroupLogo } from '@shared/ui/BrandLogo'
 import { WordReveal } from '@shared/ui/WordReveal'
-import { HrDeskIllustration } from '@shared/ui/illustrations/HrDesk'
+import { client } from '@shared/api/createClient'
+import { Photo } from '@shared/ui/Photo'
 import { usePrefersReducedMotion } from '@shared/ui/motionPresets'
 
 const entities = ['Infolks', 'Webfolks', 'Dataways', 'Medrays']
 const careersUrl = import.meta.env.VITE_CAREERS_URL ?? '/'
+const LOGIN_ART = '/images/auth/hr-login.svg'
 
 const features = [
   { icon: InboxStackIcon, title: 'Every application in one place', text: 'Job applications and Quick apply, reviewed by entity.' },
   { icon: CalendarDaysIcon, title: 'Interviews in sync', text: 'Schedule rounds and keep the HR calendar up to date.' },
   { icon: UserGroupIcon, title: 'A talent community', text: 'Job alerts and company updates for future hires.' },
 ]
+
+/** Two culture photos from the careers page, shown beside the sign-in card on tall screens. */
+async function fetchSitePhotos() {
+  const { data } = await client.get('/api/v1/public/content')
+  const content = data.data ?? {}
+  const usable = (url) => url && !url.includes('/placeholders/')
+  return {
+    culture: (content.media ?? []).filter((item) => item.type === 'activity' && usable(item.photo_url)).slice(0, 2),
+  }
+}
 
 /**
  * Sign-in, password reset and two-factor screens.
@@ -24,12 +37,17 @@ const features = [
  */
 export function AuthLayout() {
   const reduced = usePrefersReducedMotion()
+  const photos = useQuery({ queryKey: ['auth-site-photos'], queryFn: fetchSitePhotos, staleTime: 3_600_000, retry: false })
+  const culture = photos.data?.culture ?? []
   const rise = (delay = 0) => (reduced ? {} : { initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] } })
 
   return (
     <div className="relative isolate min-h-dvh overflow-hidden bg-ink text-white">
-      <Aurora tone="dark" />
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-dots-light bg-dots [mask-image:radial-gradient(ellipse_at_center,#000_15%,transparent_70%)]" aria-hidden="true" />
+      {/* Generated artwork for the HR portal: candidate cards, an interview calendar and the hiring pipeline. */}
+      <img src={LOGIN_ART} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover motion-safe:animate-ken-burns" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink/95 via-ink/70 to-ink/20" aria-hidden="true" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/80 via-transparent to-transparent" aria-hidden="true" />
+      <Aurora tone="dark" className="opacity-60" />
 
       <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-6 lg:px-8">
         <header className="flex items-center justify-between py-2 sm:py-4">
@@ -61,12 +79,19 @@ export function AuthLayout() {
                 </li>
               ))}
             </m.ul>
-            {/* The illustration appears only when the screen is tall enough, so the page never needs to scroll on laptops. */}
-            <m.div {...rise(0.55)} className="mt-10 hidden max-w-lg [@media(min-height:900px)]:block">
-              <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-4 backdrop-blur">
-                <HrDeskIllustration className="h-auto w-full motion-safe:animate-float-slow" />
-              </div>
-            </m.div>
+            {/* Team photos appear only when the screen is tall enough, so the page never needs to scroll on laptops. */}
+            {culture.length ? (
+              <m.div {...rise(0.55)} className="mt-10 hidden max-w-lg grid-cols-2 gap-4 [@media(min-height:900px)]:grid" aria-hidden="true">
+                {culture.map((photo, index) => (
+                  <figure key={photo.id} className={`glass-dark rounded-[1.5rem] p-1.5 ${index ? 'translate-y-6' : ''}`}>
+                    <div className={`motion-safe:animate-float-slow ${index ? '[animation-delay:-8s]' : ''}`}>
+                      <Photo src={photo.photo_url} className="aspect-[4/3] rounded-[1.15rem]" sizes="240px" />
+                      <figcaption className="px-2 pb-1 pt-2 text-xs font-medium text-white/80">{photo.title}</figcaption>
+                    </div>
+                  </figure>
+                ))}
+              </m.div>
+            ) : null}
           </section>
 
           <section className="mx-auto w-full max-w-md lg:max-w-none">

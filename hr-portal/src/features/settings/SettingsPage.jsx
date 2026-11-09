@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import { PageHeader } from '@shared/ui/Card'
 import { Tabs } from '@shared/ui/Tabs'
 import { useAuth } from '../auth/AuthProvider'
+import { CompaniesPanel } from './CompaniesPanel'
 import { ListsPanel } from './ListsPanel'
 import { RolesPanel } from './RolesPanel'
 import { SystemPanel } from './SystemPanel'
@@ -13,6 +14,7 @@ export function SettingsPage() {
   const can = (permission) => user?.permissions?.includes(permission)
   const tabs = [
     ...(can('settings.users') ? [{ id: 'users', label: 'HR users' }, { id: 'roles', label: 'Roles & permissions' }] : []),
+    ...(can('entities.manage') ? [{ id: 'companies', label: 'Companies' }] : []),
     ...(can('settings.lists') ? [{ id: 'lists', label: 'Departments, teams & skills' }] : []),
     ...(can('settings.users') ? [{ id: 'system', label: 'System health' }] : []),
   ]
@@ -20,10 +22,11 @@ export function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Settings" subtitle="HR users, permissions, lists and system status." />
+      <PageHeader title="Settings" subtitle="HR users, permissions, companies, lists and system status." />
       <Tabs items={tabs} value={tab ?? ''} onChange={(next) => setParams({ tab: next }, { replace: true })} label="Settings sections" />
       {tab === 'users' ? <UsersPanel /> : null}
       {tab === 'roles' ? <RolesPanel /> : null}
+      {tab === 'companies' ? <CompaniesPanel /> : null}
       {tab === 'lists' ? <ListsPanel /> : null}
       {tab === 'system' ? <SystemPanel /> : null}
     </div>

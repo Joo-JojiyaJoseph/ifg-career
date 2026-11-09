@@ -65,8 +65,10 @@ function messageFor(status, data, error) {
   if (data.message && status !== 500) return data.message
   if (!error.response) return error.code === 'ECONNABORTED' ? 'The server took too long to answer. Please try again.' : 'We could not reach the server. Check your connection and try again.'
   if (status === 429) return 'Too many attempts. Please wait a minute and try again.'
-  if (status >= 500) return 'Something went wrong on our side. Please try again in a moment.'
-  return 'Something went wrong. Please try again.'
+  if (status === 413) return 'The files are larger than the server accepts (error 413). Choose smaller files, or raise post_max_size and upload_max_filesize in php.ini.'
+  if (status === 404 || status === 405) return `The server did not recognise this request (error ${status}). If you just updated the app, clear its caches (php artisan optimize:clear) and try again.`
+  if (status >= 500) return `Something went wrong on our side (error ${status}). Please try again in a moment.`
+  return `Something went wrong (error ${status}). Please try again.`
 }
 
 client.interceptors.response.use(

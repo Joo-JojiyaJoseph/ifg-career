@@ -128,7 +128,9 @@ Route::prefix('hr')->group(function () {
             Route::get('settings', [ContentController::class, 'settings']);
             Route::post('settings/{key}', [ContentController::class, 'updateSetting'])->whereIn('key', array_keys(ContentService::SETTINGS));
             Route::get('entities', [ContentController::class, 'entities']);
+            Route::post('entities', [ContentController::class, 'storeEntity'])->middleware('permission:entities.manage');
             Route::post('entities/{slug}', [ContentController::class, 'updateEntity'])->where('slug', '[a-z0-9-]+');
+            Route::delete('entities/{slug}', [ContentController::class, 'destroyEntity'])->where('slug', '[a-z0-9-]+')->middleware('permission:entities.manage');
             Route::get('{type}', [ContentController::class, 'index'])->where('type', ContentTypes::PATTERN);
             Route::post('{type}', [ContentController::class, 'store'])->where('type', ContentTypes::PATTERN);
             Route::post('{type}/reorder', [ContentController::class, 'reorder'])->where('type', ContentTypes::PATTERN);

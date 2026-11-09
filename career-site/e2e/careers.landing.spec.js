@@ -2,14 +2,30 @@ import { expect, test } from '@playwright/test'
 import { expectNoHorizontalScroll } from './helpers'
 
 test.describe('Careers landing page', () => {
-  test('shows the nine guide sections in order', async ({ page }) => {
+  test('shows the seven career page sections in order', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.getByRole('link', { name: 'Infolks Group Careers home' })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Job Search' }).first()).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Infolks Group' })).toBeVisible()
+    await expect(page.getByText('Be part of our heart')).toBeVisible()
+    await expect(page.getByText('A company with a heart').first()).toBeVisible()
+    // Phones keep the navigation in the slide-out menu.
+    const menu = page.getByRole('button', { name: 'Open menu' })
+    const mobile = await menu.isVisible()
+    if (mobile) await menu.click()
+    const nav = mobile ? page.getByRole('dialog') : page.getByRole('banner')
+    for (const link of ['Careers', 'Job Search', 'Internship', 'Candidate profile']) {
+      await expect(nav.getByRole('link', { name: link, exact: true })).toBeVisible()
+    }
+    if (mobile) await page.keyboard.press('Escape')
 
-    const titles = ['Our entities', 'About the group', 'Our interview procedure', 'Life at the group', 'Quick apply', 'Frequently asked questions', 'Our recognitions and validations']
+    const titles = [
+      'Our story has more than one way in',
+      'Why Join Infolks Group',
+      'Our Recruitment Process',
+      'Your story could begin here',
+      'A few things you might want to know',
+    ]
     let previous = -1
     for (const title of titles) {
       const heading = page.getByRole('heading', { name: title, exact: true })
@@ -20,16 +36,19 @@ test.describe('Careers landing page', () => {
       previous = top
     }
 
-    await expect(page.locator('footer')).toContainText('Infolks Group')
+    await expect(page.locator('footer')).toContainText('Every new person brings a new perspective')
+    await expect(page.getByText('We have been saving a place for you')).toHaveCount(0)
+    await expect(page.getByText('Round 1: Skill Test')).toBeVisible()
+    await expect(page.getByText('Round 2: HR Round')).toBeVisible()
     await expectNoHorizontalScroll(page)
   })
 
   test('shows all four entities and links to their roles', async ({ page }) => {
     await page.goto('/')
     for (const entity of ['Infolks', 'Webfolks', 'Dataways', 'Medrays']) {
-      await expect(page.getByRole('link', { name: `View roles at ${entity}` })).toBeVisible()
+      await expect(page.getByRole('link', { name: `Explore opportunities at ${entity}` })).toBeVisible()
     }
-    await page.getByRole('link', { name: 'View roles at Medrays' }).click()
+    await page.getByRole('link', { name: 'Explore opportunities at Medrays' }).click()
     await expect(page).toHaveURL(/entity=medrays/)
   })
 

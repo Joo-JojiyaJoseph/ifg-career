@@ -10,6 +10,7 @@ use App\Http\Resources\ContentItemResource;
 use App\Models\Entity;
 use App\Models\SiteSetting;
 use App\Services\ContentService;
+use App\Services\EntityService;
 use App\Services\ImageService;
 use App\Support\ContentTypes;
 use Illuminate\Database\Eloquent\Model;
@@ -93,10 +94,14 @@ class ContentController extends Controller
     {
         $this->authorize('viewAny', Entity::class);
 
-        return response()->json(['data' => Entity::query()->orderBy('sort_order')->get()->map(fn (Entity $entity) => [
+        return response()->json(['data' => Entity::query()->withCount(['jobPostings', 'applications'])->orderBy('sort_order')->orderBy('name')->get()->map(fn (Entity $entity) => [
             'id' => $entity->id,
             'name' => $entity->name,
             'slug' => $entity->slug,
+            'sort_order' => $entity->sort_order,
+            'is_active' => $entity->is_active,
+            'jobs_count' => $entity->job_postings_count,
+            'applications_count' => $entity->applications_count,
             'motto' => $entity->motto,
             'short_description' => $entity->short_description,
             'primary_color' => $entity->primary_color,
@@ -111,10 +116,37 @@ class ContentController extends Controller
     {
         $entity = Entity::query()->where('slug', $slug)->firstOrFail();
         $this->authorize('update', $entity);
-        $data = collect($request->validated())->except(['logo', 'pattern'])->all();
-        $entity = $content->saveEntity($entity, $data, $request->file('logo'), $request->file('pattern'));
+        $data = collect($request->validated())->except(['logo', 'pattern', 'photo', 'slug']);
+        // Renaming, hiding and reordering companies is for users who may manage companies.
+        if ($request->user()->cannot('manage', Entity::class)) {
+            $data = $data->except(['name', 'is_active', 'sort_order']);
+        }
+        $data = $data->all();
+        $entity = $content->saveEntity($entity, $data, $request->file('logo'), $request->file('pattern'), $request->file('photo'));
 
         return response()->json(['data' => ['slug' => $entity->slug, 'theme' => $entity->theme]]);
+    }
+
+    public function storeEntity(EntityContentRequest $request, EntityService $entities): JsonResponse
+    {
+        $this->authorize('create', Entity::class);
+        $entity = $entities->create(
+            collect($request->validated())->except(['logo', 'pattern', 'photo'])->all(),
+            $request->file('logo'),
+            $request->file('pattern'),
+            $request->file('photo'),
+        );
+
+        return response()->json(['data' => ['slug' => $entity->slug, 'name' => $entity->name, 'theme' => $entity->theme]], 201);
+    }
+
+    public function destroyEntity(string $slug, EntityService $entities): Response
+    {
+        $entity = Entity::query()->where('slug', $slug)->firstOrFail();
+        $this->authorize('delete', $entity);
+        $entities->delete($entity);
+
+        return response()->noContent();
     }
 
     private function find(string $type, int $id): Model

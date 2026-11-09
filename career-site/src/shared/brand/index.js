@@ -8,9 +8,20 @@ const byName = Object.fromEntries(
   Object.entries(files).map(([path, url]) => [path.replace('./', '').replace(/\.(svg|png|webp)$/, ''), url]),
 )
 
-/** URL of a bundled brand file such as `infolks-group` or `dataways-white`, or null. */
+/**
+ * Official logos linked from the group's own websites, used when no file is bundled here.
+ * Webfolks and Medrays have no link yet: add one here, drop a file in this folder, or upload a logo in Website Content.
+ */
+const officialLinks = {
+  'infolks-group': 'https://infolksgroup.com/images/logo/logo.svg',
+  'infolks-group-white': 'https://infolksgroup.com/images/logo/logo-white.svg',
+  infolks: 'https://infolks.info/images/home/logo_new.svg',
+  dataways: 'https://dataways.ai/images/logo/logo.svg',
+}
+
+/** URL of a brand logo such as `infolks-group` or `dataways-white`: the bundled file, else the official link, else null. */
 export function brandAsset(name) {
-  return byName[name] ?? null
+  return byName[name] ?? officialLinks[name] ?? null
 }
 
 export const GROUP = {

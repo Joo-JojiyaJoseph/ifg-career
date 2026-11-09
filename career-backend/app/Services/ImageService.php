@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\ProcessUploadedImage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -22,7 +23,12 @@ class ImageService
 
     public function queue(UploadedFile $file, Model $model, string $column, int $maxWidth = 1600): void
     {
-        $extension = strtolower($file->guessExtension() ?: $file->getClientOriginalExtension());
+        // guessExtension() needs PHP's fileinfo extension; fall back to the file name when it is missing.
+        try {
+            $extension = strtolower($file->guessExtension() ?: $file->getClientOriginalExtension());
+        } catch (\Throwable) {
+            $extension = strtolower($file->getClientOriginalExtension());
+        }
 
         if ($extension === 'svg') {
             // SVG logos and patterns are text; store them directly after a basic safety check.
@@ -54,11 +60,29 @@ class ImageService
     {
         $disk = Storage::disk('private');
         $raw = $disk->get($pendingPath);
-        $image = $raw !== null ? @imagecreatefromstring($raw) : false;
+
+        if ($raw === null) {
+            throw new RuntimeException('The uploaded image is missing.');
+        }
+
+        // Without PHP's GD extension (or a GD build that cannot read this format), publish the file as uploaded
+        // rather than failing. It is not resized or stripped of metadata, so enabling GD is still recommended.
+        $image = function_exists('imagecreatefromstring') ? @imagecreatefromstring($raw) : false;
 
         if ($image === false) {
+            $type = self::sniff($raw);
+
+            if ($type === null) {
+                $disk->delete($pendingPath);
+                throw new RuntimeException('The image could not be read.');
+            }
+
+            Log::warning('Image published without processing; enable the GD extension with WebP support', ['type' => $type]);
+            $path = 'content/'.Str::ulid().'.'.$type;
+            Storage::disk('public')->put($path, $raw);
             $disk->delete($pendingPath);
-            throw new RuntimeException('The image could not be read.');
+
+            return $path;
         }
 
         $width = imagesx($image);
@@ -88,6 +112,20 @@ class ImageService
         $disk->delete($pendingPath);
 
         return $path;
+    }
+
+    /**
+     * The image type from the file's first bytes: jpg, png, webp or gif, or null if it is not an image.
+     */
+    public static function sniff(string $bytes): ?string
+    {
+        return match (true) {
+            str_starts_with($bytes, "\xFF\xD8\xFF") => 'jpg',
+            str_starts_with($bytes, "\x89PNG\r\n\x1A\n") => 'png',
+            str_starts_with($bytes, 'RIFF') && substr($bytes, 8, 4) === 'WEBP' => 'webp',
+            str_starts_with($bytes, 'GIF8') => 'gif',
+            default => null,
+        };
     }
 
     public function replace(Model $model, string $column, ?string $path): void

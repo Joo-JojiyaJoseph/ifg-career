@@ -29,7 +29,7 @@ class QuickApplyService
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{application: Application, confirmation: string, profile_notice: ?string}
+     * @return array{application: Application, candidate: Candidate, created: bool, confirmation: string, profile_notice: ?string}
      */
     public function submit(array $input, UploadedFile $resume): array
     {
@@ -37,6 +37,7 @@ class QuickApplyService
         $department = Department::query()->findOrFail($input['department_id']);
         $candidate = Candidate::query()->where('email', $email)->first();
         $existingGoogle = $candidate && filled($candidate->google_id);
+        $created = $candidate === null;
 
         if ($candidate) {
             $check = $this->eligibility->forGeneral($candidate, $department->id);
@@ -60,6 +61,7 @@ class QuickApplyService
                     'name' => $input['name'],
                     'date_of_birth' => $input['date_of_birth'],
                     'phone' => $input['phone'],
+                    'gender' => $input['gender'],
                     'location' => $input['location'],
                     'highest_qualification' => $input['highest_qualification'],
                     'preferred_department_id' => $department->id,
@@ -74,6 +76,7 @@ class QuickApplyService
                     'name' => $input['name'],
                     'date_of_birth' => $input['date_of_birth'],
                     'phone' => $input['phone'],
+                    'gender' => $input['gender'],
                     'location' => $input['location'],
                     'highest_qualification' => $input['highest_qualification'],
                     'preferred_department_id' => $department->id,
@@ -99,6 +102,7 @@ class QuickApplyService
                     'email' => $email,
                     'phone' => $input['phone'],
                     'date_of_birth' => $input['date_of_birth'],
+                    'gender' => $input['gender'],
                     'highest_qualification' => $input['highest_qualification'],
                     'location' => $input['location'],
                     'department_name' => $department->name,
@@ -114,10 +118,14 @@ class QuickApplyService
 
         return [
             'application' => $application,
+            'candidate' => $application->candidate,
+            'created' => $created,
             'confirmation' => $this->confirmationText(),
-            'profile_notice' => $existingGoogle
-                ? 'You already have a profile. Sign in with Google to update it.'
-                : null,
+            // Only a brand-new profile is signed in automatically. An existing profile could belong to someone else
+            // who simply typed this email address, so its owner signs in with Google to see it.
+            'profile_notice' => $created
+                ? null
+                : 'This email already has a candidate profile. Sign in with Google to see the status of your applications.',
         ];
     }
 

@@ -6,12 +6,14 @@ use App\Enums\ApplicationSource;
 use App\Enums\ApplicationStatus;
 use App\Enums\ApplicationType;
 use App\Enums\EmailType;
+use App\Enums\TalentSource;
 use App\Exceptions\IneligibleApplicationException;
 use App\Mail\JobApplicationReceived;
 use App\Models\Application;
 use App\Models\Candidate;
 use App\Models\EmailLog;
 use App\Models\JobPosting;
+use App\Models\TalentMember;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -83,9 +85,29 @@ class ApplicationService
             return $application;
         });
 
+        $this->joinTalentCommunity($candidate);
         $this->queueConfirmation($application, $candidate, $job);
 
         return $application->load(['entity', 'jobPosting', 'department']);
+    }
+
+    /**
+     * Requirements step 4: applying adds the candidate to the talent community. Someone who already unsubscribed
+     * stays unsubscribed (TC-05); their membership is only linked to the candidate.
+     */
+    private function joinTalentCommunity(Candidate $candidate): void
+    {
+        $member = TalentMember::query()->firstOrNew(['email' => $candidate->email]);
+        $member->fill(['name' => $candidate->name, 'phone' => $candidate->phone, 'candidate_id' => $candidate->id]);
+
+        if (! $member->exists) {
+            $member->source = TalentSource::Signin;
+            $member->is_subscribed = true;
+            $member->subscribed_at = now();
+            $member->privacy_consent_at = $candidate->privacy_consent_at ?? now();
+        }
+
+        $member->save();
     }
 
     /**

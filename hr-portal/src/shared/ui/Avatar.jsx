@@ -18,7 +18,7 @@ function colourFor(name = '') {
   return palette[hash % palette.length]
 }
 
-const sizes = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-14 w-14 text-base' }
+const sizes = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-14 w-14 text-base', xl: 'h-20 w-20 text-2xl' }
 
 /**
  * Round avatar: the Google photo when there is one, otherwise initials in a colour taken from the name.
@@ -42,5 +42,5 @@ Avatar.propTypes = {
   name: PropTypes.string,
   src: PropTypes.string,
   initials: PropTypes.string,
-  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
 }

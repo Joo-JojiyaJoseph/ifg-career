@@ -19,9 +19,10 @@ class EntityPolicy
         return $this->viewAny($user);
     }
 
+    /** Adding, renaming, hiding and deleting companies is for Admin (entities.manage). */
     public function create(User $user): bool
     {
-        return $this->allows($user, 'content.manage');
+        return $this->allows($user, 'entities.manage');
     }
 
     public function update(User $user): bool
@@ -31,6 +32,11 @@ class EntityPolicy
 
     public function delete(User $user): bool
     {
-        return $this->allows($user, 'content.manage');
+        return $this->allows($user, 'entities.manage');
+    }
+
+    public function manage(User $user): bool
+    {
+        return $this->allows($user, 'entities.manage');
     }
 }

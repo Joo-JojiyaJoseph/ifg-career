@@ -14,6 +14,8 @@ test('sends a Quick apply application without signing in', async ({ page }) => {
   await section.getByLabel('Date of birth').fill('1998-05-12')
   await section.getByLabel('Email ID').fill(`e2e-${unique()}@example.com`)
   await section.locator('#phone').fill('98470 12345')
+  await section.locator('#gender').click()
+  await page.getByRole('option', { name: 'Female' }).click()
   await section.getByLabel('Highest qualification').fill('B.Tech')
   await section.getByLabel('Location').fill('Kochi')
   await section.locator('#department_id').click()
@@ -22,7 +24,14 @@ test('sends a Quick apply application without signing in', async ({ page }) => {
   await section.getByLabel(/privacy policy/).first().check()
   await section.getByRole('button', { name: 'Submit application' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Application received' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Thank you for sharing your profile with us!' })).toBeVisible()
+
+  // A first-time candidate is signed in, and Candidate profile lists the general application.
+  await expect(section.getByText('You are now signed in.')).toBeVisible()
+  await section.getByRole('link', { name: 'Candidate profile' }).click()
+  await expect(page).toHaveURL(/\/my-applications/)
+  await expect(page.getByText('Sign in to see your applications')).toHaveCount(0)
+  await expect(page.locator('main')).toContainText(/General|Quick apply/i)
 })
 
 test('explains what is missing when the form is empty', async ({ page }) => {
@@ -31,5 +40,16 @@ test('explains what is missing when the form is empty', async ({ page }) => {
   await section.getByRole('button', { name: 'Submit application' }).click()
   await expect(section.getByRole('alert').first()).toBeVisible()
   await expect(section.getByLabel('Full name')).toBeFocused()
+})
+
+test('opens Quick Apply in a dialog from another page', async ({ page }) => {
+  await page.goto('/jobs')
+  await page.locator('footer').getByRole('link', { name: 'Quick Apply' }).click()
+  const dialog = page.getByRole('dialog')
+  await expect(page.getByRole('heading', { name: 'Quick Apply' })).toBeVisible()
+  await expect(page).toHaveURL(/\/jobs$/)
+  await expect(dialog.getByLabel('Full name')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Submit application' }).click()
+  await expect(dialog.getByLabel('Full name')).toBeFocused()
 })
 

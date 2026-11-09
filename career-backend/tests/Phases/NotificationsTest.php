@@ -165,3 +165,21 @@ it('does not let background polling keep an idle portal session alive', function
 
     expect(now()->diffInMinutes(session('hr.last_activity'), true))->toBeGreaterThanOrEqual(9);
 });
+
+it('puts a new application in the bell straight away, even with no queue worker running', function () {
+    config(['queue.default' => 'database']);                       // jobs wait in the table; nothing processes them
+    $hr = hrUserWithRole('HR');
+
+    Application::factory()->create();
+
+    $this->actingAs($hr, 'web');
+    $count = $this->getJson('/api/v1/hr/notifications/unread-count')->assertOk()->json();
+    expect(data_get($count, 'unread', data_get($count, 'data.unread')))->toBe(1);
+
+    $list = $this->getJson('/api/v1/hr/notifications')->assertOk()->json('data');
+    expect($list[0]['type'] ?? $list[0]['data']['type'] ?? null)->toBe('new_application');
+
+    $this->postJson('/api/v1/hr/notifications/read-all')->assertSuccessful();
+    $after = $this->getJson('/api/v1/hr/notifications/unread-count')->json();
+    expect(data_get($after, 'unread', data_get($after, 'data.unread')))->toBe(0);
+});

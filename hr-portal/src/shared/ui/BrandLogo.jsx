@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { GROUP, brandAsset, entityLogoUrl } from '../brand'
 
@@ -14,16 +15,19 @@ const images = { sm: 'h-6 w-6', md: 'h-8 w-8', lg: 'h-10 w-10', xl: 'h-14 w-14' 
  * Infolks Group logo. Uses the official file from `src/shared/brand` when it exists,
  * otherwise a monogram tile plus the name. `tone="dark"` for dark backgrounds.
  */
-export function GroupLogo({ tone = 'light', suffix, className = '' }) {
+export function GroupLogo({ tone = 'light', size = 'md', suffix, className = '' }) {
   const dark = tone === 'dark'
-  const file = dark ? brandAsset('infolks-group-white') ?? brandAsset('infolks-group') : brandAsset('infolks-group')
+  const wanted = dark ? brandAsset('infolks-group-white') ?? brandAsset('infolks-group') : brandAsset('infolks-group')
+  // A linked logo that fails to load (offline, blocked) falls back to the monogram.
+  const [failed, setFailed] = useState(null)
+  const file = wanted && failed !== wanted ? wanted : null
   const onTile = dark && file && !brandAsset('infolks-group-white')
 
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
       {file ? (
         <span className={onTile ? 'rounded-xl bg-white px-2.5 py-1.5' : ''}>
-          <img src={file} alt={GROUP.name} className="h-8 w-auto max-w-[10rem] object-contain" width="140" height="32" />
+          <img src={file} alt={GROUP.name} className={`${size === 'lg' ? 'h-12 max-w-[14rem]' : 'h-8 max-w-[10rem]'} w-auto object-contain`} width="140" height="32" onError={() => setFailed(file)} />
         </span>
       ) : (
         <>
@@ -38,14 +42,16 @@ export function GroupLogo({ tone = 'light', suffix, className = '' }) {
   )
 }
 
-GroupLogo.propTypes = { tone: PropTypes.oneOf(['light', 'dark']), suffix: PropTypes.string, className: PropTypes.string }
+GroupLogo.propTypes = { tone: PropTypes.oneOf(['light', 'dark']), size: PropTypes.oneOf(['md', 'lg']), suffix: PropTypes.string, className: PropTypes.string }
 
 /**
  * An entity's logo on a tile tinted with its colour, or its monogram when no logo exists yet.
  * Decorative by default (the entity name is usually printed next to it); pass `labelled` when it stands alone.
  */
 export function EntityLogo({ entity, size = 'md', labelled = false, className = '' }) {
-  const url = entityLogoUrl(entity)
+  const wanted = entityLogoUrl(entity)
+  const [failed, setFailed] = useState(null)
+  const url = wanted && failed !== wanted ? wanted : null
   const primary = entity?.theme?.primary ?? '#1976D2'
 
   return (
@@ -57,7 +63,7 @@ export function EntityLogo({ entity, size = 'md', labelled = false, className = 
       aria-hidden={labelled ? undefined : 'true'}
     >
       {url ? (
-        <img src={url} alt="" className={`${images[size]} object-contain`} loading="lazy" />
+        <img src={url} alt="" className={`${images[size]} object-contain`} loading="lazy" onError={() => setFailed(url)} />
       ) : (
         <span className="font-display font-semibold text-[var(--logo-tint)]">{entity?.name?.slice(0, 2)}</span>
       )}
