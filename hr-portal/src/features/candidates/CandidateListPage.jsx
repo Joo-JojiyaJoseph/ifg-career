@@ -5,6 +5,7 @@ import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { Badge, StatusBadge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
+import { ColumnsMenu } from '@shared/ui/ColumnsMenu'
 import { DataTable } from '@shared/ui/DataTable'
 import { DateInput } from '@shared/ui/DateInput'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -157,6 +158,11 @@ export function CandidateListPage() {
     }
   }
 
+  function changeColumns(next) {
+    setColumnVisibility(next)
+    if (user?.email) window.localStorage.setItem(columnKey(user.email), JSON.stringify(next))
+  }
+
   const chips = buildChips(filters, meta.data, entities.data, update)
 
   return (
@@ -176,6 +182,21 @@ export function CandidateListPage() {
         }
         activeCount={chips.filter((chip) => chip.key !== 'q').length}
         onOpen={() => { setDraft(filters); setOpen(true) }}
+        actions={
+
+          <>
+
+            <SavedFilters
+                    items={saved.data ?? []}
+                    saving={saveMutation.isPending}
+                    onApply={(item) => applyQuery(item.query)}
+                    onDelete={(item) => deleteMutation.mutate(item.id)}
+                    onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
+            />
+
+            <ColumnsMenu columns={columns} visibility={columnVisibility} onChange={changeColumns} />
+          </>
+        }
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ResultCount count={total} noun="candidates" />
@@ -196,27 +217,18 @@ export function CandidateListPage() {
             update(item ? { sort: item.id, direction: item.desc ? 'desc' : 'asc' } : { sort: 'name', direction: 'asc' })
           }}
           columnVisibility={columnVisibility}
-          onColumnVisibilityChange={(next) => {
-            setColumnVisibility(next)
-            if (user?.email) window.localStorage.setItem(columnKey(user.email), JSON.stringify(next))
-          }}
+          onColumnVisibilityChange={changeColumns}
           getRowId={(row) => row.public_id}
           renderCard={(candidate) => <CandidateSummary candidate={candidate} />}
         />
       ) : null}
       <Pagination
         page={Number(filters.page)}
+        total={total}
         pageCount={list.data?.meta?.last_page ?? 1}
         perPage={Number(filters.per_page)}
         onPageChange={(page) => update({ page: String(page) }, true)}
         onPerPageChange={(perPage) => update({ per_page: String(perPage) })}
-      />
-      <SavedFilters
-        items={saved.data ?? []}
-        saving={saveMutation.isPending}
-        onApply={(item) => applyQuery(item.query)}
-        onDelete={(item) => deleteMutation.mutate(item.id)}
-        onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
       />
       <FilterPanel
         open={open}

@@ -18,9 +18,11 @@ function srcSetFor(src) {
  * The wrapper sets the size and shape (`className`); the image always covers it.
  * Pass `priority` for the first photo on a page so it loads straight away.
  */
-export function Photo({ src, alt = '', className = '', imgClassName = '', sizes = '100vw', priority = false }) {
+export function Photo({ src, alt = '', className = '', imgClassName = '', sizes = '100vw', priority = false, fallback = null }) {
   const [state, setState] = useState('loading')
   const show = src && state !== 'error'
+  // Something nicer than the plain gradient (an illustration, say) when there is no photo or it fails to load.
+  if (!show && fallback) return fallback
 
   return (
     <div className={`relative overflow-hidden bg-gradient-to-br from-brand-700 via-navy to-ink ${className}`}>
@@ -51,4 +53,6 @@ Photo.propTypes = {
   imgClassName: PropTypes.string,
   sizes: PropTypes.string,
   priority: PropTypes.bool,
+  /** Shown instead of the gradient when the photo is missing or fails to load. */
+  fallback: PropTypes.node,
 }

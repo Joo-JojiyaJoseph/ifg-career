@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Department;
 use App\Models\Entity;
+use App\Models\Team;
 use App\Support\CacheVersion;
 use App\Support\ListTypes;
 use Illuminate\Database\Eloquent\Model;
@@ -56,6 +57,14 @@ class ListService
             }
             unset($data['entity']);
             $this->assertUniqueDepartment($data['name'] ?? $item->name, array_key_exists('entity_id', $data) ? $data['entity_id'] : $item->entity_id, $item->id);
+        }
+
+        if ($type === 'teams') {
+            $departmentId = array_key_exists('department_id', $data) ? $data['department_id'] : $item->department_id;
+            $taken = Team::query()->where('name', $data['name'] ?? $item->name)->where('department_id', $departmentId)->when($item->id, fn ($q) => $q->whereKeyNot($item->id))->exists();
+            if ($taken) {
+                throw ValidationException::withMessages(['name' => 'This department already has a team with this name.']);
+            }
         }
 
         $item->fill($data)->save();

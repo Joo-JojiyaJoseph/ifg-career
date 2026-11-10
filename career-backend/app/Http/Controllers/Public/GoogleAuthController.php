@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Services\CandidateAuthService;
+use App\Support\GoogleRedirectCheck;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
@@ -20,6 +21,11 @@ class GoogleAuthController extends Controller
 
         if (blank(config('services.google.client_id')) || blank(config('services.google.client_secret'))) {
             return $this->toCareers('/?auth_error=google_not_configured');
+        }
+
+        // Google would block an address like *.test with "Access blocked: invalid_request"; explain it here instead.
+        if (GoogleRedirectCheck::problem() !== null) {
+            return $this->toCareers('/?auth_error=google_redirect_invalid');
         }
 
         return Socialite::driver('google')

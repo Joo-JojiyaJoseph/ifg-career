@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnforcePortalIdleTimeout;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\InlineUploads;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->throttleApi();
+        $middleware->appendToGroup('api', InlineUploads::class);
         $middleware->append(SecurityHeaders::class);
         $middleware->alias([
             'role' => RoleMiddleware::class,

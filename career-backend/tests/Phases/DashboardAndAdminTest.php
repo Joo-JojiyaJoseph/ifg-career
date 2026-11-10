@@ -14,6 +14,7 @@ use App\Services\ReportService;
 use App\Support\PermissionCatalog;
 use Database\Seeders\EntitySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Spatie\Permission\Models\Role;
@@ -175,4 +176,34 @@ it('sends security headers on API responses', function () {
         ->assertHeader('X-Frame-Options', 'DENY')
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('Content-Security-Policy');
+});
+
+it('tells admins when queued jobs have waited too long, which means no worker is running', function () {
+    actingAsHr('Admin');
+    config(['queue.default' => 'database']);
+
+    $this->getJson('/api/v1/hr/system/health')->assertOk()->assertJsonPath('data.queue.oldest_wait_minutes', 0);
+
+    DB::table('jobs')->insert([
+        'queue' => 'default',
+        'payload' => '{}',
+        'attempts' => 0,
+        'reserved_at' => null,
+        'available_at' => now()->subMinutes(7)->timestamp,
+        'created_at' => now()->subMinutes(7)->timestamp,
+    ]);
+
+    $this->getJson('/api/v1/hr/system/health')->assertOk()->assertJsonPath('data.queue.oldest_wait_minutes', 7);
+});
+
+it('saves filters on the jobs, candidates and applications lists, each kept to its own screen', function () {
+    actingAsHr('HR');
+
+    foreach (['jobs', 'candidates', 'applications'] as $screen) {
+        $this->postJson('/api/v1/hr/saved-filters', ['screen' => $screen, 'name' => "My {$screen}", 'query' => ['status' => 'applied']])
+            ->assertCreated();
+    }
+
+    $this->getJson('/api/v1/hr/saved-filters?screen=applications')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.name', 'My applications');
+    $this->postJson('/api/v1/hr/saved-filters', ['screen' => 'nowhere', 'name' => 'Bad', 'query' => []])->assertUnprocessable()->assertJsonValidationErrors('screen');
 });

@@ -76,7 +76,7 @@ export function ProfilePage() {
   const upload = useMutation({
     mutationFn: async (file) => {
       await ensureCsrf()
-      const { data } = await client.post('/api/v1/candidate/profile/resume', toFormData({}, file))
+      const { data } = await client.post('/api/v1/candidate/profile/resume', await toFormData({}, file))
       return data
     },
     onSuccess: () => {

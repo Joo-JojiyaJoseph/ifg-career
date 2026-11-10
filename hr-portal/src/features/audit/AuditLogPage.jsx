@@ -62,7 +62,7 @@ export function AuditLogPage() {
           </ul>
         </Card>
       ) : null}
-      <Pagination page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={50} perPageOptions={[50]} onPageChange={(page) => update({ page: String(page) })} onPerPageChange={() => {}} />
+      <Pagination total={list.data?.meta?.total} page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={50} perPageOptions={[50]} onPageChange={(page) => update({ page: String(page) })} onPerPageChange={() => {}} />
     </div>
   )
 }

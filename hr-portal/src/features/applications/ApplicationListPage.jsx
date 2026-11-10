@@ -5,6 +5,7 @@ import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { Badge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
+import { ColumnsMenu } from '@shared/ui/ColumnsMenu'
 import { DataTable } from '@shared/ui/DataTable'
 import { DateInput } from '@shared/ui/DateInput'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -20,6 +21,7 @@ import { Modal } from '@shared/ui/Modal'
 import { Pagination } from '@shared/ui/Pagination'
 import { ResultCount } from '@shared/ui/ResultCount'
 import { SavedFilters } from '@shared/ui/SavedFilters'
+import { SelectionBar } from '@shared/ui/SelectionBar'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { useToast } from '@shared/ui/Toast'
@@ -241,6 +243,11 @@ export function ApplicationListPage() {
     setParams(new URLSearchParams(), { replace: true })
   }
 
+  function changeColumns(next) {
+    setColumnVisibility(next)
+    if (user?.email) window.localStorage.setItem(columnKey(user.email), JSON.stringify(next))
+  }
+
   const chips = buildChips(filters, meta.data, entities.data, update)
   const columns = useMemo(
     () => applicationColumns(canUpdate, (id, status) => statusMutation.mutate({ id, status }), setAssignTarget, canSchedule ? setScheduleTarget : null),
@@ -287,21 +294,33 @@ export function ApplicationListPage() {
         }
         activeCount={chips.filter((chip) => chip.key !== 'q').length}
         onOpen={() => { setDraft(filters); setOpen(true) }}
+        actions={
+
+          <>
+
+            <SavedFilters
+                    items={saved.data ?? []}
+                    saving={saveMutation.isPending}
+                    onApply={(item) => applyQuery(item.query)}
+                    onDelete={(item) => deleteMutation.mutate(item.id)}
+                    onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
+            />
+
+            <ColumnsMenu columns={columns} visibility={columnVisibility} onChange={changeColumns} />
+          </>
+        }
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ResultCount count={total} noun="applications" />
         <FilterChips chips={chips} onClear={clearAll} />
       </div>
-      {canUpdate && selected.length > 0 ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <div className="w-full sm:w-64">
-            <FormField id="bulk-status" label="Bulk status">
-              <Select id="bulk-status" value={bulkValue} onChange={setBulkValue} options={[{ value: '', label: 'Choose a status' }, ...(meta.data?.enums?.application_statuses ?? []).map((item) => ({ value: item.value, label: item.label }))]} />
-            </FormField>
-          </div>
-          <Button loading={bulkMutation.isPending} disabled={!bulkValue} onClick={() => bulkMutation.mutate()}>Update {selected.length}</Button>
+      <SelectionBar count={canUpdate ? selected.length : 0} noun="application" onClear={() => setRowSelection({})}>
+        <div className="w-56">
+          <label htmlFor="bulk-status" className="sr-only">Bulk status</label>
+          <Select id="bulk-status" value={bulkValue} onChange={setBulkValue} options={[{ value: '', label: 'Choose a status' }, ...(meta.data?.enums?.application_statuses ?? []).map((item) => ({ value: item.value, label: item.label }))]} />
         </div>
-      ) : null}
+        <Button size="sm" loading={bulkMutation.isPending} disabled={!bulkValue} onClick={() => bulkMutation.mutate()}>Update {selected.length}</Button>
+      </SelectionBar>
       {list.isLoading ? <Skeleton className="h-64" /> : null}
       {list.isError ? <ErrorState onRetry={() => list.refetch()} /> : null}
       {!list.isLoading && !list.isError && rows.length === 0 ? (
@@ -320,10 +339,7 @@ export function ApplicationListPage() {
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
           columnVisibility={columnVisibility}
-          onColumnVisibilityChange={(next) => {
-            setColumnVisibility(next)
-            if (user?.email) window.localStorage.setItem(columnKey(user.email), JSON.stringify(next))
-          }}
+          onColumnVisibilityChange={changeColumns}
           getRowId={(row) => row.public_id}
           renderCard={(application) => (
             <div>
@@ -339,17 +355,11 @@ export function ApplicationListPage() {
       ) : null}
       <Pagination
         page={Number(filters.page)}
+        total={total}
         pageCount={list.data?.meta?.last_page ?? 1}
         perPage={Number(filters.per_page)}
         onPageChange={(page) => update({ page: String(page) }, true)}
         onPerPageChange={(perPage) => update({ per_page: String(perPage) })}
-      />
-      <SavedFilters
-        items={saved.data ?? []}
-        saving={saveMutation.isPending}
-        onApply={(item) => applyQuery(item.query)}
-        onDelete={(item) => deleteMutation.mutate(item.id)}
-        onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
       />
       <FilterPanel
         open={open}

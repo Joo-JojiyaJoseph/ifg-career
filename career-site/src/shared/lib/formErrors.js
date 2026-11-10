@@ -1,3 +1,5 @@
+import { fileToDataUrl } from './inlineFile'
+
 export function focusFirstError(errors, prefix = '') {
   const key = Object.keys(errors ?? {})[0]
   if (!key) return
@@ -19,7 +21,8 @@ export function applyApiErrors(error, setError, prefix = '') {
   return error?.message || 'Something went wrong. Please try again.'
 }
 
-export function toFormData(values, file) {
+/** Form fields plus the resume. The resume is sent as a data URL (see inlineFile.js). */
+export async function toFormData(values, file) {
   const body = new FormData()
   Object.entries(values).forEach(([key, value]) => {
     if (value === undefined || value === null || key === 'resume') return
@@ -29,6 +32,6 @@ export function toFormData(values, file) {
     }
     body.append(key, String(value))
   })
-  if (file instanceof File) body.append('resume', file)
+  if (file instanceof File) body.append('resume', await fileToDataUrl(file))
   return body
 }

@@ -145,7 +145,7 @@ function MembersView({ params, update }) {
           )}
         />
       ) : null}
-      <Pagination page={query.page} pageCount={list.data?.meta?.last_page ?? 1} perPage={query.per_page} onPageChange={(page) => update({ page })} onPerPageChange={(per_page) => update({ per_page })} />
+      <Pagination total={list.data?.meta?.total} page={query.page} pageCount={list.data?.meta?.last_page ?? 1} perPage={query.per_page} onPageChange={(page) => update({ page })} onPerPageChange={(per_page) => update({ per_page })} />
     </>
   )
 }
@@ -196,7 +196,7 @@ function CampaignsView({ params, update }) {
           </Card>
         ))}
       </div>
-      <Pagination page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={20} perPageOptions={[20]} onPageChange={(page) => update({ page })} onPerPageChange={() => {}} />
+      <Pagination total={list.data?.meta?.total} page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={20} perPageOptions={[20]} onPageChange={(page) => update({ page })} onPerPageChange={() => {}} />
       <CampaignDetail id={openId} onClose={() => { setOpenId(null); update({ campaign: '' }) }} />
     </>
   )

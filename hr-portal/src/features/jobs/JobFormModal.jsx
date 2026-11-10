@@ -53,7 +53,8 @@ const emptyForm = {
 
 /**
  * Create or edit a role in a large modal over the jobs list (routes /jobs/new and /jobs/:publicId/edit).
- * Drafts save themselves as you type; Publish and Done stay pinned at the bottom, other actions sit under "More".
+ * Drafts save themselves as you type. One button at the bottom finishes the job (publish, save a published role,
+ * or save the draft) and closes; the × closes too, and rarer actions sit under "More actions".
  */
 export function JobFormModal() {
   const { publicId: routeId } = useParams()
@@ -203,13 +204,18 @@ export function JobFormModal() {
   const teams = (meta.data?.teams ?? []).filter((team) => !values.department_id || String(team.department_id) === values.department_id)
   const errors = form.formState.errors
 
-  async function publish() {
-    const parsed = jobPublishSchema.safeParse(form.getValues())
+  const [finishing, setFinishing] = useState(false)
+
+  /** Saves what is on screen (publishing it when allowed) and closes the form. */
+  async function finish() {
+    const publishing = canPublish
+    const parsed = (publishing ? jobPublishSchema : jobDraftSchema).safeParse(form.getValues())
     if (!parsed.success) {
       parsed.error.issues.forEach((issue) => form.setError(String(issue.path[0] || 'title'), { message: issue.message }))
-      toast.push({ tone: 'error', message: 'Complete the role before publishing.' })
+      toast.push({ tone: 'error', message: publishing ? 'Complete the role before publishing.' : 'Fix the highlighted fields first.' })
       return
     }
+    setFinishing(true)
     try {
       const payload = toPayload(parsed.data)
       let id = savedId.current
@@ -220,18 +226,20 @@ export function JobFormModal() {
       } else {
         await updateJob(id, payload)
       }
-      const published = await jobAction(id, 'publish')
       lastSaved.current = JSON.stringify(form.getValues())
-      queryClient.setQueryData(['hr-job', id], published)
-      queryClient.invalidateQueries({ queryKey: ['hr-jobs'] })
-      toast.push({ tone: 'success', message: 'Role published' })
-      if (!routeId) {
-        hydrated.current = id
-        setCreatedId(id)
+      if (publishing) {
+        const wasPublished = job?.status === 'published'
+        queryClient.setQueryData(['hr-job', id], await jobAction(id, 'publish'))
+        toast.push({ tone: 'success', message: wasPublished ? 'Changes saved and live' : 'Role published' })
+      } else {
+        toast.push({ tone: 'success', message: 'Draft saved' })
       }
+      close()
     } catch (error) {
       applyServerErrors(error, form)
       toast.push({ tone: 'error', message: error.message })
+    } finally {
+      setFinishing(false)
     }
   }
 
@@ -291,8 +299,9 @@ export function JobFormModal() {
                 </MenuItems>
               </Menu>
             ) : null}
-            <Button variant="secondary" onClick={close}>Done</Button>
-            {canPublish ? <Button onClick={publish} loading={action.isPending}>{job?.status === 'published' ? 'Save and keep published' : 'Publish'}</Button> : null}
+            <Button onClick={finish} loading={finishing} disabled={action.isPending}>
+              {!canPublish ? 'Save draft' : job?.status === 'published' ? 'Save changes' : 'Publish'}
+            </Button>
           </>
         )
       }

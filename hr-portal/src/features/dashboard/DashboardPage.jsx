@@ -67,9 +67,13 @@ export function DashboardPage() {
       <PageHeader
         title="Career Overview"
         art={teamPhoto ? (
-          <div className="glass rounded-[1.75rem] p-1.5 motion-safe:animate-float-slow">
-            <Photo src={teamPhoto} alt="" className="aspect-[16/10] rounded-[1.4rem]" sizes="352px" />
-          </div>
+          <Photo
+            src={teamPhoto}
+            alt=""
+            className="glass aspect-[16/10] rounded-[1.75rem] border-[6px] border-white/80 motion-safe:animate-float-slow"
+            sizes="352px"
+            fallback={<HrDeskIllustration className="h-auto w-full motion-safe:animate-float-slow" />}
+          />
         ) : <HrDeskIllustration className="h-auto w-full motion-safe:animate-float-slow" />}
         subtitle={<span>Welcome back, {firstName}! Let's build a stronger team together. <HeartIcon className="inline h-4 w-4 text-brand-500" aria-hidden="true" /></span>}
         actions={

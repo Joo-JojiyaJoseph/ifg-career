@@ -4,6 +4,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { PlusIcon } from '@heroicons/react/24/outline'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
+import { ColumnsMenu } from '@shared/ui/ColumnsMenu'
 import { DataTable } from '@shared/ui/DataTable'
 import { DateInput } from '@shared/ui/DateInput'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -19,6 +20,7 @@ import { MultiSelect } from '@shared/ui/MultiSelect'
 import { Pagination } from '@shared/ui/Pagination'
 import { ResultCount } from '@shared/ui/ResultCount'
 import { SavedFilters } from '@shared/ui/SavedFilters'
+import { SelectionBar } from '@shared/ui/SelectionBar'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { StatusBadge } from '@shared/ui/Badge'
@@ -158,6 +160,11 @@ export function JobListPage() {
     setParams(new URLSearchParams(), { replace: true })
   }
 
+  function changeColumns(next) {
+    setColumnVisibility(next)
+    if (user?.email) window.localStorage.setItem(columnKey(user.email), JSON.stringify(next))
+  }
+
   const chips = buildChips(filters, meta.data, entities.data, update)
 
   return (
@@ -177,18 +184,31 @@ export function JobListPage() {
         }
         activeCount={chips.filter((chip) => chip.key !== 'q').length}
         onOpen={() => { setDraft(filters); setOpen(true) }}
+        actions={
+
+          <>
+
+            <SavedFilters
+                    items={saved.data ?? []}
+                    saving={saveMutation.isPending}
+                    onApply={(item) => applyQuery(item.query)}
+                    onDelete={(item) => deleteMutation.mutate(item.id)}
+                    onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
+            />
+
+            <ColumnsMenu columns={columns} visibility={columnVisibility} onChange={changeColumns} />
+          </>
+        }
       />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ResultCount count={total} noun="roles" />
         <FilterChips chips={chips} onClear={clearAll} />
       </div>
-      {canPublish && selected.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" loading={bulkMutation.isPending} onClick={() => bulkMutation.mutate({ action: 'publish', ids: selected })}>Publish</Button>
-          <Button size="sm" variant="secondary" loading={bulkMutation.isPending} onClick={() => bulkMutation.mutate({ action: 'unpublish', ids: selected })}>Unpublish</Button>
-          <Button size="sm" variant="danger" loading={bulkMutation.isPending} onClick={() => bulkMutation.mutate({ action: 'close', ids: selected })}>Close</Button>
-        </div>
-      ) : null}
+      <SelectionBar count={canPublish ? selected.length : 0} noun="role" onClear={() => setRowSelection({})}>
+        <Button size="sm" loading={bulkMutation.isPending} onClick={() => bulkMutation.mutate({ action: 'publish', ids: selected })}>Publish</Button>
+        <Button size="sm" variant="secondary" loading={bulkMutation.isPending} onClick={() => bulkMutation.mutate({ action: 'unpublish', ids: selected })}>Unpublish</Button>
+        <Button size="sm" variant="danger" loading={bulkMutation.isPending} onClick={() => bulkMutation.mutate({ action: 'close', ids: selected })}>Close</Button>
+      </SelectionBar>
       {list.isLoading ? <Skeleton className="h-64" /> : null}
       {list.isError ? <ErrorState onRetry={() => list.refetch()} /> : null}
       {!list.isLoading && !list.isError && rows.length === 0 ? (
@@ -207,27 +227,18 @@ export function JobListPage() {
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
           columnVisibility={columnVisibility}
-          onColumnVisibilityChange={(next) => {
-            setColumnVisibility(next)
-            if (user?.email) window.localStorage.setItem(columnKey(user.email), JSON.stringify(next))
-          }}
+          onColumnVisibilityChange={changeColumns}
           getRowId={(row) => row.public_id}
           renderCard={(job) => <JobSummary job={job} />}
         />
       ) : null}
       <Pagination
         page={Number(filters.page)}
+        total={total}
         pageCount={list.data?.meta?.last_page ?? 1}
         perPage={Number(filters.per_page)}
         onPageChange={(page) => update({ page: String(page) }, true)}
         onPerPageChange={(perPage) => update({ per_page: String(perPage) })}
-      />
-      <SavedFilters
-        items={saved.data ?? []}
-        saving={saveMutation.isPending}
-        onApply={(item) => applyQuery(item.query)}
-        onDelete={(item) => deleteMutation.mutate(item.id)}
-        onSave={(payload) => saveMutation.mutate({ ...payload, query: currentQuery(filters) })}
       />
       {/* New role and Edit role open here as modals (child routes). */}
       <Suspense fallback={null}>

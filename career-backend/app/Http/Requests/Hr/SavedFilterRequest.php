@@ -17,7 +17,7 @@ class SavedFilterRequest extends FormRequest
         $required = $this->isMethod('POST') ? 'required' : 'sometimes';
 
         return [
-            'screen' => [$required, 'string', 'max:40', Rule::in(['jobs'])],
+            'screen' => [$required, 'string', 'max:40', Rule::in(['jobs', 'candidates', 'applications'])],
             'name' => [$required, 'string', 'max:80'],
             'query' => [$required, 'array'],
             'is_default' => ['sometimes', 'boolean'],

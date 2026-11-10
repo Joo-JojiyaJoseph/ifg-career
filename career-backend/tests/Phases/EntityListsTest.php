@@ -55,3 +55,12 @@ it('refuses a job whose department belongs to another company', function () {
     $this->postJson('/api/v1/hr/job-postings', $job($medicalImaging->id))->assertUnprocessable()->assertJsonValidationErrors('department_id');
     $this->postJson('/api/v1/hr/job-postings', $job($shared->id))->assertSuccessful();
 });
+
+it('explains a duplicate team name instead of failing', function () {
+    actingAsHr('Admin');
+    $department = Department::factory()->create(['name' => 'Engineering']);
+
+    $this->postJson('/api/v1/hr/lists/teams', ['name' => 'Web', 'department_id' => $department->id])->assertCreated();
+    $this->postJson('/api/v1/hr/lists/teams', ['name' => 'Web', 'department_id' => $department->id])
+        ->assertUnprocessable()->assertJsonPath('errors.name.0', 'This department already has a team with this name.');
+});

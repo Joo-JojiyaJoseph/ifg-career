@@ -107,7 +107,7 @@ export function QuickApplyForm({ confirmation, bare = false }) {
   const mutation = useMutation({
     mutationFn: async (values) => {
       const token = await getToken.current()
-      const body = toFormData(values, values.resume)
+      const body = await toFormData(values, values.resume)
       if (token) body.append('turnstile_token', token)
       const website = form.getValues('company_website')
       if (website) body.append('company_website', website)

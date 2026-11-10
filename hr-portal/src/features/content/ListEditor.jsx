@@ -141,7 +141,9 @@ function ItemForm({ type, item, entities, onClose, onSaved }) {
     setErrors({})
     const fixed = Object.fromEntries(section.fields.filter((field) => field.type === 'hidden').map((field) => [field.name, field.value]))
     const defaults = Object.fromEntries(section.fields.filter((field) => field.default !== undefined).map((field) => [field.name, field.default]))
-    setValues(item ? { ...Object.fromEntries(section.fields.map((field) => [field.name, field.type === 'entity' ? item.entity?.slug ?? '' : field.type === 'image' ? null : item[field.name] ?? (field.type === 'switch' ? false : '')])), ...fixed } : { ...defaults, ...fixed })
+    // "Add" opens with an empty item ({}), so start every field from its default and fill in what the item has.
+    const start = (field) => (field.type === 'entity' ? item?.entity?.slug ?? '' : field.type === 'image' ? null : item?.[field.name] ?? defaults[field.name] ?? (field.type === 'switch' ? false : ''))
+    setValues(item ? { ...Object.fromEntries(section.fields.map((field) => [field.name, start(field)])), ...fixed } : { ...defaults, ...fixed })
   }
 
   const save = useMutation({

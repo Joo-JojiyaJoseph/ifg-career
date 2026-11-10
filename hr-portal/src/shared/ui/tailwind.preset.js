@@ -106,6 +106,11 @@ const preset = {
           '40%': { opacity: '1' },
           '100%': { transform: 'translateY(10px)', opacity: '0' },
         },
+        // Table rows and list items settle in one after another (delay from --row-delay).
+        'row-in': {
+          '0%': { transform: 'translateY(6px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
       },
       animation: {
         float: 'float 16s ease-in-out infinite',
@@ -120,6 +125,7 @@ const preset = {
         'ken-burns': 'ken-burns 18s ease-out both',
         heartbeat: 'heartbeat 2.2s ease-in-out infinite',
         'scroll-cue': 'scroll-cue 1.8s ease-in-out infinite',
+        'row-in': 'row-in 220ms ease-out var(--row-delay, 0ms) both',
       },
     },
   },

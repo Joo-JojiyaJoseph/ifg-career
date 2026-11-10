@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Hr;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\GoogleCalendarService;
+use App\Support\GoogleRedirectCheck;
 use App\Support\UploadDiagnostics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,11 +38,15 @@ class SystemController extends Controller
             'queue' => [
                 'driver' => config('queue.default'),
                 'pending' => config('queue.default') === 'database' && Schema::hasTable('jobs') ? DB::table('jobs')->count() : null,
+                // Minutes the oldest ready job has been waiting: more than a couple means no worker is running.
+                'oldest_wait_minutes' => config('queue.default') === 'database' && Schema::hasTable('jobs')
+                    ? (($oldest = DB::table('jobs')->whereNull('reserved_at')->min('available_at')) ? max(0, intdiv(now()->timestamp - (int) $oldest, 60)) : 0)
+                    : null,
                 'failed' => Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0,
             ],
             'failed_jobs' => $failed,
             'integrations' => [
-                ['key' => 'google_oauth', 'name' => 'Google sign-in for candidates', 'configured' => filled(config('services.google.client_id')) && filled(config('services.google.client_secret')), 'testable' => false],
+                ['key' => 'google_oauth', 'name' => 'Google sign-in for candidates', 'configured' => filled(config('services.google.client_id')) && filled(config('services.google.client_secret')), 'testable' => false, 'detail' => 'Return address: '.GoogleRedirectCheck::uri(), 'problem' => filled(config('services.google.client_id')) ? GoogleRedirectCheck::problem() : null],
                 ['key' => 'google_calendar', 'name' => 'Google Calendar (interviews)', 'configured' => $calendar->isConfigured(), 'testable' => true],
                 ['key' => 'mail', 'name' => 'Email ('.config('mail.default').')', 'configured' => config('mail.default') !== 'log' && config('mail.default') !== 'array', 'testable' => true],
                 ['key' => 'turnstile', 'name' => 'Cloudflare Turnstile (spam protection)', 'configured' => filled(config('services.turnstile.secret')), 'testable' => false],

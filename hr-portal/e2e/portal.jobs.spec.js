@@ -68,13 +68,9 @@ test.describe('Jobs: create and publish', () => {
     await form(page).getByLabel('Last date to apply').fill(isoDate(21))
     await page.getByRole('button', { name: 'Publish', exact: true }).click()
     await expect(page.getByText('Role published')).toBeVisible()
-    // The modal stays open on the published role; Unpublish now sits under More actions.
-    await expect(form(page).getByText('Published', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'More actions' }).click()
-    await expect(page.getByRole('menuitem', { name: 'Unpublish' })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await page.getByRole('button', { name: 'Done' }).click()
+    // One button: publishing saves and closes the form.
     await expect(page).toHaveURL(/\/jobs$/)
+    await expect(page.getByRole('button', { name: 'Done' })).toHaveCount(0)
   })
 
   test('a past last date is refused with a clear message', async ({ page }) => {

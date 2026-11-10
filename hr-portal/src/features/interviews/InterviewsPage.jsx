@@ -158,30 +158,32 @@ function PipelineView({ filters, onChange, canManage, onSchedule }) {
       ) : null}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {rows.map((application) => (
-          <Card key={application.public_id} className="flex min-w-0 flex-col gap-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
-            <div className="flex items-start gap-3">
+          <Card key={application.public_id} className="group flex min-w-0 flex-col gap-4 !p-0 transition duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+            <div className="flex items-start gap-3 px-5 pt-5">
               <Avatar name={application.candidate?.name} src={application.candidate?.avatar_url} initials={application.candidate?.initials} />
               <div className="min-w-0 flex-1">
-                <Link to={`/candidates/${application.candidate?.public_id}`} className="inline-flex min-h-11 items-center font-medium text-brand-700 hover:underline">{application.candidate?.name}</Link>
-                <p className="truncate text-sm text-muted">{application.role}</p>
+                <Link to={`/candidates/${application.candidate?.public_id}`} className="flex min-h-11 items-center font-display font-semibold text-ink transition hover:text-brand-700"><span className="truncate">{application.candidate?.name}</span></Link>
+                <p className="-mt-2 truncate text-sm text-muted">{application.role}</p>
               </div>
-              {application.result ? <Badge color={application.result.color}>{application.result.label}</Badge> : null}
+              {application.result ? <Badge color={application.result.color}>{application.result.label}</Badge> : <EntityBadge entity={application.entity} />}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <EntityBadge entity={application.entity} />
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 text-xs text-muted">
+              {application.result ? <EntityBadge entity={application.entity} /> : null}
+              <span>Shortlisted {formatDate(application.shortlisted_at)}</span>
               {application.is_flagged ? <Badge color="amber">Blacklisted</Badge> : null}
-              <span className="text-xs text-muted">Shortlisted {formatDate(application.shortlisted_at)}</span>
             </div>
-            <ol className="flex flex-wrap gap-2" aria-label="Rounds">
-              {application.rounds.length === 0 ? <li className="text-sm text-muted">No rounds yet</li> : null}
+            <ol className="mx-5 flex flex-col gap-1.5 rounded-xl bg-slate-50/80 p-3" aria-label="Rounds">
+              {application.rounds.length === 0 ? <li className="text-sm text-muted">No rounds scheduled yet</li> : null}
               {application.rounds.map((round) => (
-                <li key={round.public_id}>
-                  <Badge color={round.status.color}>{round.round_number}. {round.round_name}: {round.status.label}</Badge>
+                <li key={round.public_id} className="flex items-center gap-2 text-sm">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-brand-700 shadow-sm">{round.round_number}</span>
+                  <span className="min-w-0 flex-1 truncate text-ink">{round.round_name}</span>
+                  <Badge color={round.status.color}>{round.status.label}</Badge>
                 </li>
               ))}
             </ol>
-            {canManage ? (
-              <div className="mt-auto flex flex-wrap gap-2">
+            {canManage && (application.can_schedule || application.can_select || application.can_reject) ? (
+              <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-border/70 px-5 py-3">
                 {application.can_schedule ? (
                   <Button size="sm" icon={PlusIcon} onClick={() => onSchedule(application)}>{application.rounds.length ? 'Next round' : 'Schedule'}</Button>
                 ) : null}
@@ -189,14 +191,14 @@ function PipelineView({ filters, onChange, canManage, onSchedule }) {
                   <Button size="sm" variant="secondary" icon={CheckBadgeIcon} onClick={() => setDecision({ application, value: 'selected' })}>Mark selected</Button>
                 ) : null}
                 {application.can_reject ? (
-                  <Button size="sm" variant="ghost" icon={XMarkIcon} onClick={() => setDecision({ application, value: 'not_selected' })}>Not selected</Button>
+                  <Button size="sm" variant="ghost" icon={XMarkIcon} className="ml-auto text-muted hover:text-danger" onClick={() => setDecision({ application, value: 'not_selected' })}>Not selected</Button>
                 ) : null}
               </div>
-            ) : null}
+            ) : <div className="pb-1" />}
           </Card>
         ))}
       </div>
-      <Pagination page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={25} onPageChange={(page) => onChange({ page })} onPerPageChange={() => {}} perPageOptions={[25]} />
+      <Pagination total={list.data?.meta?.total} page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={25} onPageChange={(page) => onChange({ page })} onPerPageChange={() => {}} perPageOptions={[25]} />
       <ConfirmDialog
         open={Boolean(decision)}
         onClose={() => setDecision(null)}
@@ -263,7 +265,7 @@ function RoundsView({ filters, onChange, onSelect }) {
           )}
         />
       ) : null}
-      <Pagination
+      <Pagination total={list.data?.meta?.total}
         page={Number(filters.page) || 1}
         pageCount={list.data?.meta?.last_page ?? 1}
         perPage={Number(filters.per_page) || 25}

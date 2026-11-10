@@ -1,10 +1,17 @@
 import { client, ensureCsrf } from '@shared/api/createClient'
+import { fileToDataUrl } from '@shared/lib/inlineFile'
 
-function toBody(values) {
+/**
+ * Form body for content saves. Images go in as data URLs (see inlineFile.js) so uploads work even when
+ * PHP has no temporary upload folder.
+ */
+async function toBody(values) {
   const body = new FormData()
+  const files = await Promise.all(Object.entries(values).filter(([, value]) => value instanceof File).map(async ([key, value]) => [key, await fileToDataUrl(value)]))
+  const inline = Object.fromEntries(files)
   Object.entries(values).forEach(([key, value]) => {
     if (value === undefined) return
-    if (value instanceof File) body.append(key, value)
+    if (value instanceof File) body.append(key, inline[key])
     else if (typeof value === 'boolean') body.append(key, value ? '1' : '0')
     else if (Array.isArray(value)) {
       value.forEach((item, index) => {
@@ -23,7 +30,7 @@ export async function fetchItems(type) {
 
 export async function saveItem(type, values, id) {
   await ensureCsrf()
-  const { data } = await client.post(id ? `/api/v1/hr/content/${type}/${id}` : `/api/v1/hr/content/${type}`, toBody(values))
+  const { data } = await client.post(id ? `/api/v1/hr/content/${type}/${id}` : `/api/v1/hr/content/${type}`, await toBody(values))
   return data.data
 }
 
@@ -44,7 +51,7 @@ export async function fetchSettings() {
 
 export async function saveSetting(key, values) {
   await ensureCsrf()
-  const { data } = await client.post(`/api/v1/hr/content/settings/${key}`, toBody(values))
+  const { data } = await client.post(`/api/v1/hr/content/settings/${key}`, await toBody(values))
   return data.data
 }
 
@@ -55,13 +62,13 @@ export async function fetchEntityContent() {
 
 export async function saveEntity(slug, values) {
   await ensureCsrf()
-  const { data } = await client.post(`/api/v1/hr/content/entities/${slug}`, toBody(values))
+  const { data } = await client.post(`/api/v1/hr/content/entities/${slug}`, await toBody(values))
   return data.data
 }
 
 export async function createEntity(values) {
   await ensureCsrf()
-  const { data } = await client.post('/api/v1/hr/content/entities', toBody(values))
+  const { data } = await client.post('/api/v1/hr/content/entities', await toBody(values))
   return data.data
 }
 

@@ -17,6 +17,7 @@ import { contentQuery, culturePhotos } from '../features/landing/api'
 const authErrors = {
   google_not_configured: 'Google sign-in is not configured yet. Add the Google client id and secret to the API.',
   google_failed: 'Google sign-in did not complete. Please try again.',
+  google_redirect_invalid: 'Google sign-in is set up with a return address Google does not accept. HR can see how to fix it in the portal under Settings → System health.',
 }
 
 /**

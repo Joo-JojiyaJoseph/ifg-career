@@ -88,7 +88,7 @@ function ApplyForm({ job, candidate, src }) {
 
   const mutation = useMutation({
     mutationFn: async (values) => {
-      const body = toFormData({ ...values, src }, values.resume)
+      const body = await toFormData({ ...values, src }, values.resume)
       await ensureCsrf()
       const { data } = await client.post(`/api/v1/candidate/jobs/${job.public_id}/apply`, body)
       return data

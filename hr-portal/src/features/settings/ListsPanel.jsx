@@ -1,189 +1,362 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { MagnifyingGlassIcon, PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
-import { Badge } from '@shared/ui/Badge'
+import { BuildingOffice2Icon, EllipsisVerticalIcon, GlobeAltIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { EntityLogo } from '@shared/ui/BrandLogo'
 import { Button } from '@shared/ui/Button'
 import { Card } from '@shared/ui/Card'
+import { ConfirmDialog } from '@shared/ui/ConfirmDialog'
 import { ErrorState } from '@shared/ui/ErrorState'
-import { IconButton } from '@shared/ui/IconButton'
 import { FormField } from '@shared/ui/FormField'
 import { Input } from '@shared/ui/Input'
-import { MultiSelect } from '@shared/ui/MultiSelect'
 import { Modal } from '@shared/ui/Modal'
 import { Select } from '@shared/ui/Select'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
-import { Switch } from '@shared/ui/Switch'
-import { Tabs } from '@shared/ui/Tabs'
 import { useToast } from '@shared/ui/Toast'
 import { fetchEntityContent } from '../content/api'
 import { createListItem, deleteListItem, fetchList, updateListItem } from './api'
 
-const types = [{ id: 'departments', label: 'Departments', noun: 'department' }, { id: 'teams', label: 'Teams', noun: 'team' }, { id: 'skills', label: 'Skills', noun: 'skill' }]
+const GROUP = ''
 
 /**
- * Departments sit under a company (or are group-wide), teams under a department, and skills are linked to
- * companies (none = every company). The company filter shows one company's lists plus the group-wide items.
+ * Settings → Departments, teams & skills, organised by company.
+ * Pick a company (or "Whole group") and see its departments, each with its teams, and its skills.
+ * Everything is added by typing a name and pressing Enter; rarer actions sit in a ⋯ menu.
  */
 export function ListsPanel() {
-  const [type, setType] = useState('departments')
-  const [company, setCompany] = useState('')
-  const entities = useQuery({ queryKey: ['hr-content', 'entities'], queryFn: fetchEntityContent, staleTime: 300_000 })
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs items={types} value={type} onChange={setType} label="Lists" />
-        <div className="sm:w-60">
-          <label htmlFor="lists-company" className="sr-only">Company</label>
-          <Select id="lists-company" value={company} onChange={setCompany} options={[{ value: '', label: 'All companies' }, ...(entities.data ?? []).map((entity) => ({ value: entity.slug, label: entity.name }))]} />
-        </div>
-      </div>
-      <ListEditor key={type} type={types.find((item) => item.id === type)} company={company} entities={entities.data ?? []} />
-    </div>
-  )
-}
-
-function ListEditor({ type, company, entities }) {
   const toast = useToast()
   const queryClient = useQueryClient()
-  const key = ['hr-list', type.id, company]
-  const list = useQuery({ queryKey: key, queryFn: () => fetchList(type.id, company) })
-  const departments = useQuery({ queryKey: ['hr-list', 'departments', ''], queryFn: () => fetchList('departments'), enabled: type.id === 'teams' })
-  const companyName = (slug) => entities.find((entity) => entity.slug === slug)?.name
-  // null = closed; { id: null } = adding; { id, name } = renaming.
-  const [dialog, setDialog] = useState(null)
-  const [filter, setFilter] = useState('')
+  const entities = useQuery({ queryKey: ['hr-content', 'entities'], queryFn: fetchEntityContent, staleTime: 300_000 })
+  const departments = useQuery({ queryKey: ['hr-list', 'departments', ''], queryFn: () => fetchList('departments') })
+  const teams = useQuery({ queryKey: ['hr-list', 'teams', ''], queryFn: () => fetchList('teams') })
+  const skills = useQuery({ queryKey: ['hr-list', 'skills', ''], queryFn: () => fetchList('skills') })
+  const [company, setCompany] = useState(null)
+
+  const companies = entities.data ?? []
+  const current = company ?? companies[0]?.slug ?? GROUP
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['hr-list'] })
     queryClient.invalidateQueries({ queryKey: ['hr-meta'] })
   }
   const fail = (error) => toast.push({ tone: 'error', message: error.errors ? Object.values(error.errors)[0][0] : error.message })
+  const create = useMutation({ mutationFn: ({ type, body }) => createListItem(type, body), onSuccess: (_, { body }) => { toast.push({ tone: 'success', message: `${body.name} added` }); refresh() }, onError: fail })
+  const update = useMutation({ mutationFn: ({ type, id, body }) => updateListItem(type, id, body), onSuccess: (_, { message }) => { toast.push({ tone: 'success', message: message ?? 'Saved' }); refresh() }, onError: fail })
+  const remove = useMutation({ mutationFn: ({ type, id }) => deleteListItem(type, id), onSuccess: (_, { name }) => { toast.push({ tone: 'success', message: `${name} removed` }); refresh() }, onError: fail })
+  const actions = { create, update, remove }
 
-  const save = useMutation({
-    mutationFn: ({ id, name, departmentId, entity, skillEntities }) => {
-      const body = {
-        name,
-        ...(type.id === 'departments' ? { entity: entity || null } : {}),
-        ...(type.id === 'skills' ? { entities: skillEntities ?? [] } : {}),
-        ...(type.id === 'teams' && !id && departmentId ? { department_id: Number(departmentId) } : {}),
-      }
-      return id ? updateListItem(type.id, id, body) : createListItem(type.id, body)
-    },
-    onSuccess: (_, variables) => {
-      toast.push({ tone: 'success', message: variables.id ? 'Saved' : `${variables.name} added` })
-      setDialog(null)
-      refresh()
-    },
-    onError: fail,
-  })
-  const toggle = useMutation({ mutationFn: ({ id, body }) => updateListItem(type.id, id, body), onSuccess: () => { toast.push({ tone: 'success', message: 'Saved' }); refresh() }, onError: fail })
-  const remove = useMutation({ mutationFn: (id) => deleteListItem(type.id, id), onSuccess: () => { toast.push({ tone: 'success', message: 'Removed' }); refresh() }, onError: fail })
+  if (departments.isLoading || skills.isLoading || entities.isLoading) return <Skeleton className="h-96" />
+  if (departments.isError || skills.isError || teams.isError) return <ErrorState onRetry={() => refresh()} />
 
-  const rows = (list.data ?? []).filter((item) => item.name.toLowerCase().includes(filter.toLowerCase()))
+  const owns = (department) => (current === GROUP ? !department.entity : department.entity?.slug === current)
+  const companyDepartments = (departments.data ?? []).filter(owns)
+  const companySkills = (skills.data ?? []).filter((skill) => (current === GROUP ? !skill.entities?.length : skill.entities?.some((entity) => entity.slug === current)))
+  const sharedSkills = current === GROUP ? [] : (skills.data ?? []).filter((skill) => !skill.entities?.length)
+  const label = current === GROUP ? 'the whole group' : companies.find((entity) => entity.slug === current)?.name
 
   return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" aria-hidden="true" />
-          <Input className="pl-10" aria-label={`Search ${type.label.toLowerCase()}`} placeholder={`Search ${type.label.toLowerCase()}`} value={filter} onChange={(event) => setFilter(event.target.value)} />
-        </div>
-        <Button icon={PlusIcon} onClick={() => setDialog({ id: null, name: '', departmentId: '', entity: company, skillEntities: company ? [company] : [] })}>Add {type.noun}</Button>
-      </div>
-      {list.isLoading ? <Skeleton className="h-40" /> : null}
-      {list.isError ? <ErrorState onRetry={() => list.refetch()} /> : null}
-      {!list.isLoading && !list.isError && rows.length === 0 ? (
-        <EmptyState title={filter ? `No ${type.label.toLowerCase()} match “${filter}”` : `No ${type.label.toLowerCase()} yet`} description={`Add a ${type.noun} to use it on job posts.`} />
-      ) : null}
-      {rows.length ? <p className="text-sm text-muted">{rows.length} {rows.length === 1 ? type.noun : type.label.toLowerCase()}</p> : null}
-      <ul className="grid gap-2">
-        {rows.map((item) => (
-          <li key={item.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-white px-4 py-2 transition duration-200 hover:border-brand-200 hover:shadow-card">
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className={`truncate font-medium ${item.is_active ? 'text-ink' : 'text-muted line-through'}`}>{item.name}</span>
-              <span className="text-xs text-muted">{item.usage} {item.usage === 1 ? 'job' : 'jobs'}{item.department ? ` · ${item.department}` : ''}</span>
-            </span>
-            <CompanyTags item={item} type={type.id} entities={entities} />
-            {!item.is_active ? <Badge color="slate">Inactive</Badge> : null}
-            <Switch checked={item.is_active} onChange={(value) => toggle.mutate({ id: item.id, body: { is_active: value } })} label={item.is_active ? 'Active' : 'Inactive'} srOnlyLabel />
-            <IconButton label={`Edit ${item.name}`} onClick={() => setDialog({ id: item.id, name: item.name, entity: item.entity?.slug ?? '', skillEntities: (item.entities ?? []).map((entity) => entity.slug) })}><PencilSquareIcon className="h-5 w-5" /></IconButton>
-            <IconButton label={`Remove ${item.name}`} className="text-danger hover:bg-red-50" disabled={item.usage > 0} title={item.usage > 0 ? 'In use: deactivate it instead' : undefined} onClick={() => remove.mutate(item.id)}><TrashIcon className="h-5 w-5" /></IconButton>
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col gap-5">
+      <section className="flex flex-col gap-3" aria-labelledby="step-company">
+        <StepTitle id="step-company" step={1} title="Choose a company" text="Departments, teams and skills you add below belong to this company." />
+        <CompanyPicker companies={companies} value={current} onChange={setCompany} departments={departments.data ?? []} />
+      </section>
 
-      <Modal
-        open={Boolean(dialog)}
-        onClose={() => setDialog(null)}
-        size="sm"
-        icon={dialog?.id ? PencilSquareIcon : PlusIcon}
-        title={dialog?.id ? `Edit ${type.noun}` : `Add a ${type.noun}`}
-        description={type.id === 'departments' ? 'A department belongs to one company, or to the whole group.' : type.id === 'skills' ? 'Link the skill to the companies that use it. Leave it empty for every company.' : company ? `Showing ${companyName(company)}'s departments.` : undefined}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setDialog(null)}>Cancel</Button>
-            <Button type="submit" form={`list-form-${type.id}`} loading={save.isPending} disabled={!dialog?.name?.trim()}>{dialog?.id ? 'Save' : 'Add'}</Button>
-          </>
-        }
-      >
-        {dialog ? (
-          <form id={`list-form-${type.id}`} className="flex flex-col gap-4" onSubmit={(event) => { event.preventDefault(); if (dialog.name.trim()) save.mutate({ ...dialog, name: dialog.name.trim() }) }}>
-            <FormField id={`list-name-${type.id}`} label="Name" required>
-              <Input id={`list-name-${type.id}`} value={dialog.name} maxLength={100} onChange={(event) => setDialog({ ...dialog, name: event.target.value })} />
-            </FormField>
-            {type.id === 'departments' ? (
-              <FormField id="department-company" label="Company">
-                <Select id="department-company" value={dialog.entity ?? ''} onChange={(entity) => setDialog({ ...dialog, entity })} options={[{ value: '', label: 'Whole group (all companies)' }, ...entities.map((entity) => ({ value: entity.slug, label: entity.name }))]} />
-              </FormField>
-            ) : null}
-            {type.id === 'skills' ? (
-              <FormField id="skill-companies" label="Companies" hint="Empty means every company can use it.">
-                <MultiSelect id="skill-companies" noun="company" placeholder="Add a company" value={dialog.skillEntities ?? []} onChange={(skillEntities) => setDialog({ ...dialog, skillEntities })} options={entities.map((entity) => ({ value: entity.slug, label: entity.name }))} />
-              </FormField>
-            ) : null}
-            {type.id === 'teams' && !dialog.id ? (
-              <FormField id="new-team-department" label="Department">
-                <Select
-                  id="new-team-department"
-                  value={dialog.departmentId}
-                  onChange={(departmentId) => setDialog({ ...dialog, departmentId })}
-                  options={[
-                    { value: '', label: 'No department' },
-                    ...(departments.data ?? [])
-                      .filter((item) => !company || !item.entity || item.entity.slug === company)
-                      .map((item) => ({ value: String(item.id), label: item.entity ? `${item.name} · ${item.entity.name}` : `${item.name} · Whole group` })),
-                  ]}
-                />
-              </FormField>
-            ) : null}
-          </form>
+      <Card className="flex flex-col gap-4">
+        <StepTitle
+          step={2}
+          title={`Departments and teams in ${current === GROUP ? 'the whole group' : label}`}
+          text={current === GROUP ? 'Group-wide departments, such as HR, can be used by every company.' : `Add a department to ${label}, then add its teams. Group-wide departments are available too.`}
+        />
+        <QuickAdd
+          id="new-department"
+          label={`New department in ${label}`}
+          placeholder={`New department in ${current === GROUP ? 'the whole group' : label}`}
+          busy={create.isPending}
+          onAdd={(name) => create.mutateAsync({ type: 'departments', body: { name, entity: current || null } })}
+        />
+        {companyDepartments.length === 0 ? <EmptyState title={`No departments in ${label} yet`} description="Type a name above and press Enter." /> : null}
+        <ul className="grid gap-3 lg:grid-cols-2">
+          {companyDepartments.map((department) => (
+            <DepartmentCard key={department.id} department={department} teams={(teams.data ?? []).filter((team) => team.department_id === department.id)} companies={companies} actions={actions} />
+          ))}
+        </ul>
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <StepTitle
+          step={3}
+          title={`Skills at ${current === GROUP ? 'the whole group' : label}`}
+          text={current === GROUP ? 'Skills every company can use. Candidates search jobs by skill.' : `Skills used at ${label}. Candidates search jobs by skill.`}
+        />
+        <QuickAdd
+          id="new-skill"
+          label="New skill"
+          placeholder={`New skill for ${current === GROUP ? 'every company' : label}`}
+          busy={create.isPending || update.isPending}
+          onAdd={(name) => {
+            // A skill can only exist once; if another company already has it, share it with this one too.
+            const existing = (skills.data ?? []).find((skill) => skill.name.toLowerCase() === name.toLowerCase())
+            if (existing && current !== GROUP) {
+              const slugs = (existing.entities ?? []).map((entity) => entity.slug)
+              if (!slugs.length || slugs.includes(current)) return Promise.reject(new Error(`${existing.name} is already available here.`))
+              return update.mutateAsync({ type: 'skills', id: existing.id, body: { entities: [...slugs, current] }, message: `${existing.name} added to ${label}` })
+            }
+            return create.mutateAsync({ type: 'skills', body: { name, entities: current ? [current] : [] } })
+          }}
+          onError={(error) => toast.push({ tone: 'error', message: error.message })}
+        />
+        {companySkills.length === 0 ? <p className="text-sm text-muted">No skills of its own yet.</p> : null}
+        <ul className="flex flex-wrap gap-2">
+          {companySkills.map((skill) => <SkillChip key={skill.id} skill={skill} company={current} actions={actions} />)}
+        </ul>
+        {sharedSkills.length ? (
+          <p className="border-t border-border pt-3 text-sm text-muted">
+            <GlobeAltIcon className="mr-1 inline h-4 w-4 align-[-3px]" aria-hidden="true" />
+            Also available: {sharedSkills.length} group-wide {sharedSkills.length === 1 ? 'skill' : 'skills'} ({sharedSkills.slice(0, 6).map((skill) => skill.name).join(', ')}{sharedSkills.length > 6 ? '…' : ''}).
+          </p>
         ) : null}
-      </Modal>
-    </Card>
+      </Card>
+    </div>
   )
 }
 
-ListEditor.propTypes = { type: PropTypes.object.isRequired, company: PropTypes.string, entities: PropTypes.array.isRequired }
-
-/** Which companies an item belongs to: a department's company, a team's (via its department), a skill's list. */
-function CompanyTags({ item, type, entities }) {
-  const owners = type === 'skills' ? item.entities ?? [] : item.entity ? [item.entity] : []
-  if (!owners.length) return <Badge color="slate">{type === 'skills' ? 'All companies' : 'Whole group'}</Badge>
+/** A numbered step heading, so the order is clear: company first, then its departments and skills. */
+function StepTitle({ id, step, title, text }) {
   return (
-    <span className="flex flex-wrap items-center gap-1.5">
-      {owners.map((owner) => {
-        const entity = entities.find((candidate) => candidate.slug === owner.slug) ?? owner
+    <div className="flex items-start gap-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white" aria-hidden="true">{step}</span>
+      <div className="min-w-0">
+        <h2 id={id} className="font-display text-lg font-semibold text-ink">
+          <span className="sr-only">Step {step}: </span>
+          {title}
+        </h2>
+        <p className="text-sm text-muted">{text}</p>
+      </div>
+    </div>
+  )
+}
+
+StepTitle.propTypes = { id: PropTypes.string, step: PropTypes.number.isRequired, title: PropTypes.string.isRequired, text: PropTypes.string }
+
+/** One button per company plus "Whole group", each with how many departments it has. */
+function CompanyPicker({ companies, value, onChange, departments }) {
+  const count = (slug) => departments.filter((department) => (slug === GROUP ? !department.entity : department.entity?.slug === slug)).length
+  const choices = [...companies.map((entity) => ({ slug: entity.slug, name: entity.name, entity })), { slug: GROUP, name: 'Whole group' }]
+
+  return (
+    <div role="radiogroup" aria-label="Company" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      {choices.map((choice) => {
+        const active = choice.slug === value
         return (
-          <span key={owner.slug} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white py-0.5 pl-0.5 pr-2.5 text-xs font-medium text-navy">
-            <EntityLogo entity={entity} size="sm" className="!h-6 !w-6 !text-[9px]" />
-            {owner.name}
-          </span>
+          <button
+            key={choice.slug || 'group'}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(choice.slug)}
+            className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 py-2 text-left transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${active ? 'border-brand-500 bg-white shadow-card ring-1 ring-brand-500' : 'border-border bg-white/70 hover:border-brand-200 hover:bg-white'}`}
+          >
+            {choice.entity ? (
+              <EntityLogo entity={choice.entity} size="sm" />
+            ) : (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600" aria-hidden="true"><BuildingOffice2Icon className="h-5 w-5" /></span>
+            )}
+            <span className="min-w-0">
+              <span className={`block truncate text-sm font-semibold ${active ? 'text-brand-700' : 'text-ink'}`}>{choice.name}</span>
+              <span className="block text-xs text-muted">{count(choice.slug)} {count(choice.slug) === 1 ? 'department' : 'departments'}</span>
+            </span>
+          </button>
         )
       })}
-    </span>
+    </div>
   )
 }
 
-CompanyTags.propTypes = { item: PropTypes.object.isRequired, type: PropTypes.string.isRequired, entities: PropTypes.array.isRequired }
+CompanyPicker.propTypes = { companies: PropTypes.array.isRequired, value: PropTypes.string.isRequired, onChange: PropTypes.func.isRequired, departments: PropTypes.array.isRequired }
+
+/** A text box with an Add button; Enter adds too. Clears itself once the item is saved. */
+function QuickAdd({ id, label, placeholder, onAdd, onError, busy = false, compact = false }) {
+  const [value, setValue] = useState('')
+  const submit = async (event) => {
+    event.preventDefault()
+    const name = value.trim()
+    if (!name) return
+    try {
+      await onAdd(name)
+      setValue('')
+    } catch (error) {
+      onError?.(error)
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="flex gap-2">
+      <label htmlFor={id} className="sr-only">{label}</label>
+      <Input id={id} value={value} maxLength={100} placeholder={placeholder} onChange={(event) => setValue(event.target.value)} className={compact ? '!min-h-10 text-sm' : ''} />
+      <Button type="submit" variant={compact ? 'secondary' : 'primary'} size={compact ? 'sm' : 'md'} icon={PlusIcon} loading={busy} disabled={!value.trim()} className="shrink-0">
+        Add
+      </Button>
+    </form>
+  )
+}
+
+QuickAdd.propTypes = { id: PropTypes.string.isRequired, label: PropTypes.string.isRequired, placeholder: PropTypes.string, onAdd: PropTypes.func.isRequired, onError: PropTypes.func, busy: PropTypes.bool, compact: PropTypes.bool }
+
+/** A department with its teams as chips and a box to add a team. */
+function DepartmentCard({ department, teams, companies, actions }) {
+  const [editing, setEditing] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const hidden = !department.is_active
+
+  return (
+    <li className={`flex flex-col gap-3 rounded-2xl border p-4 ${hidden ? 'border-dashed border-border bg-slate-50' : 'border-border bg-white'}`}>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className={`font-display font-semibold ${hidden ? 'text-muted' : 'text-ink'}`}>{department.name}</p>
+          <p className="text-xs text-muted">
+            {teams.length} {teams.length === 1 ? 'team' : 'teams'} · {department.usage} {department.usage === 1 ? 'job' : 'jobs'}
+            {hidden ? ' · Hidden from new jobs' : ''}
+          </p>
+        </div>
+        <ItemMenu
+          name={department.name}
+          items={[
+            { label: 'Rename or move', run: () => setEditing(true) },
+            { label: hidden ? 'Show again' : 'Hide from new jobs', run: () => actions.update.mutate({ type: 'departments', id: department.id, body: { is_active: hidden }, message: hidden ? `${department.name} is shown again` : `${department.name} is hidden from new jobs` }) },
+            department.usage || teams.length
+              ? { label: 'Delete', disabled: true, hint: department.usage ? 'Used by jobs: hide it instead' : 'Remove its teams first' }
+              : { label: 'Delete', danger: true, run: () => setRemoving(true) },
+          ]}
+        />
+      </div>
+
+      <ul className="flex flex-wrap gap-2" aria-label={`Teams in ${department.name}`}>
+        {teams.map((team) => (
+          <li key={team.id} className={`inline-flex min-h-9 items-center gap-1 rounded-full border pl-3 text-sm ${team.is_active ? 'border-brand-100 bg-brand-50 text-navy' : 'border-dashed border-border text-muted line-through'}`}>
+            {team.name}
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-white hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={team.usage ? `${team.name} is used by ${team.usage} jobs` : `Remove ${team.name}`}
+              title={team.usage ? `Used by ${team.usage} ${team.usage === 1 ? 'job' : 'jobs'}, so it stays` : `Remove ${team.name}`}
+              disabled={team.usage > 0}
+              onClick={() => actions.remove.mutate({ type: 'teams', id: team.id, name: team.name })}
+            >
+              <XMarkIcon className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+        {teams.length === 0 ? <li className="text-sm text-muted">No teams yet.</li> : null}
+      </ul>
+      <QuickAdd id={`new-team-${department.id}`} label={`New team in ${department.name}`} placeholder="Add a team" compact busy={actions.create.isPending} onAdd={(name) => actions.create.mutateAsync({ type: 'teams', body: { name, department_id: department.id } })} />
+
+      {editing ? <DepartmentEditor department={department} companies={companies} actions={actions} onClose={() => setEditing(false)} /> : null}
+      <ConfirmDialog
+        open={removing}
+        onClose={() => setRemoving(false)}
+        title={`Delete ${department.name}?`}
+        message="It is not used by any job, so it can be deleted."
+        confirmLabel="Delete"
+        loading={actions.remove.isPending}
+        onConfirm={() => actions.remove.mutate({ type: 'departments', id: department.id, name: department.name }, { onSettled: () => setRemoving(false) })}
+      />
+    </li>
+  )
+}
+
+DepartmentCard.propTypes = { department: PropTypes.object.isRequired, teams: PropTypes.array.isRequired, companies: PropTypes.array.isRequired, actions: PropTypes.object.isRequired }
+
+function DepartmentEditor({ department, companies, actions, onClose }) {
+  const [name, setName] = useState(department.name)
+  const [entity, setEntity] = useState(department.entity?.slug ?? GROUP)
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      size="sm"
+      title={`Edit ${department.name}`}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="submit" form={`edit-department-${department.id}`} loading={actions.update.isPending} disabled={!name.trim()}>Save</Button>
+        </>
+      }
+    >
+      <form
+        id={`edit-department-${department.id}`}
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          actions.update.mutate({ type: 'departments', id: department.id, body: { name: name.trim(), entity: entity || null } }, { onSuccess: onClose })
+        }}
+      >
+        <FormField id={`department-name-${department.id}`} label="Name" required>
+          <Input id={`department-name-${department.id}`} value={name} maxLength={100} onChange={(event) => setName(event.target.value)} />
+        </FormField>
+        <FormField id={`department-company-${department.id}`} label="Company">
+          <Select id={`department-company-${department.id}`} value={entity} onChange={setEntity} options={[...companies.map((item) => ({ value: item.slug, label: item.name })), { value: GROUP, label: 'Whole group (all companies)' }]} />
+        </FormField>
+      </form>
+    </Modal>
+  )
+}
+
+DepartmentEditor.propTypes = { department: PropTypes.object.isRequired, companies: PropTypes.array.isRequired, actions: PropTypes.object.isRequired, onClose: PropTypes.func.isRequired }
+
+/**
+ * A skill. × removes it from this company when other companies also use it; otherwise it deletes the skill,
+ * which is only possible while no job uses it.
+ */
+function SkillChip({ skill, company, actions }) {
+  const owners = (skill.entities ?? []).map((entity) => entity.slug)
+  const shared = company !== GROUP && owners.length > 1
+  const blocked = !shared && skill.usage > 0
+  const others = (skill.entities ?? []).filter((entity) => entity.slug !== company).map((entity) => entity.name)
+
+  return (
+    <li className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border bg-white pl-3 text-sm text-navy">
+      {skill.name}
+      {shared ? <span className="text-xs text-muted">+ {others.join(', ')}</span> : null}
+      <button
+        type="button"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-red-50 hover:text-danger focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label={blocked ? `${skill.name} is used by ${skill.usage} jobs` : shared ? `Remove ${skill.name} from this company` : `Delete ${skill.name}`}
+        title={blocked ? `Used by ${skill.usage} ${skill.usage === 1 ? 'job' : 'jobs'}, so it stays` : undefined}
+        disabled={blocked}
+        onClick={() =>
+          shared
+            ? actions.update.mutate({ type: 'skills', id: skill.id, body: { entities: owners.filter((slug) => slug !== company) }, message: `${skill.name} removed from this company` })
+            : actions.remove.mutate({ type: 'skills', id: skill.id, name: skill.name })
+        }
+      >
+        <XMarkIcon className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </li>
+  )
+}
+
+SkillChip.propTypes = { skill: PropTypes.object.isRequired, company: PropTypes.string.isRequired, actions: PropTypes.object.isRequired }
+
+function ItemMenu({ name, items }) {
+  return (
+    <Menu as="div" className="relative">
+      <MenuButton className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-navy hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500" aria-label={`More actions for ${name}`}>
+        <EllipsisVerticalIcon className="h-5 w-5" aria-hidden="true" />
+      </MenuButton>
+      <MenuItems anchor="bottom end" className="z-30 w-60 rounded-xl border border-border bg-white p-1 shadow-card-hover focus:outline-none">
+        {items.map((item) => (
+          <MenuItem key={item.label} disabled={item.disabled}>
+            <button type="button" onClick={item.run} className={`block min-h-11 w-full rounded-lg px-3 py-2 text-left text-sm data-[focus]:bg-brand-50 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-60 ${item.danger ? 'text-danger' : 'text-navy'}`}>
+              {item.label}
+              {item.hint ? <span className="block text-xs text-muted">{item.hint}</span> : null}
+            </button>
+          </MenuItem>
+        ))}
+      </MenuItems>
+    </Menu>
+  )
+}
+
+ItemMenu.propTypes = { name: PropTypes.string.isRequired, items: PropTypes.array.isRequired }

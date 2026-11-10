@@ -86,7 +86,7 @@ export function NotificationsPage() {
           </ul>
         </Card>
       ) : null}
-      <Pagination page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={20} perPageOptions={[20]} onPageChange={(page) => update({ page: String(page) })} onPerPageChange={() => {}} />
+      <Pagination total={list.data?.meta?.total} page={Number(filters.page) || 1} pageCount={list.data?.meta?.last_page ?? 1} perPage={20} perPageOptions={[20]} onPageChange={(page) => update({ page: String(page) })} onPerPageChange={() => {}} />
     </div>
   )
 }

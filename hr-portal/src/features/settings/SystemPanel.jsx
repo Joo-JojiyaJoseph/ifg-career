@@ -27,8 +27,13 @@ export function SystemPanel() {
         <ul className="mt-4 flex flex-col gap-3">
           {data.integrations.map((item) => (
             <li key={item.key} className="flex flex-wrap items-center gap-3">
-              {item.configured ? <CheckCircleIcon className="h-5 w-5 text-success" aria-hidden="true" /> : <ExclamationTriangleIcon className="h-5 w-5 text-warning" aria-hidden="true" />}
-              <span className="flex-1 text-sm text-text">{item.name}<span className="block text-xs text-muted">{item.configured ? 'Configured' : 'Not configured: see the README'}</span></span>
+              {item.configured && !item.problem ? <CheckCircleIcon className="h-5 w-5 text-success" aria-hidden="true" /> : <ExclamationTriangleIcon className="h-5 w-5 text-warning" aria-hidden="true" />}
+              <span className="min-w-0 flex-1 text-sm text-text">
+                {item.name}
+                <span className="block text-xs text-muted">{item.configured ? 'Configured' : 'Not configured: see the README'}</span>
+                {item.configured && item.detail ? <span className="block break-all text-xs text-muted">{item.detail}</span> : null}
+                {item.problem ? <span className="mt-1 block text-xs text-danger">{item.problem}</span> : null}
+              </span>
               {item.testable ? <Button size="sm" variant="secondary" loading={test.isPending && test.variables === item.key} onClick={() => test.mutate(item.key)}>Test</Button> : null}
             </li>
           ))}
@@ -41,7 +46,12 @@ export function SystemPanel() {
           <div className="rounded-xl bg-brand-50 p-3"><dt className="text-xs text-muted">Waiting</dt><dd className="font-semibold text-navy">{data.queue.pending ?? '—'}</dd></div>
           <div className={`rounded-xl p-3 ${data.queue.failed ? 'bg-red-50' : 'bg-brand-50'}`}><dt className="text-xs text-muted">Failed</dt><dd className={`font-semibold ${data.queue.failed ? 'text-danger' : 'text-navy'}`}>{data.queue.failed}</dd></div>
         </dl>
-        {data.queue.pending > 50 ? <p className="mt-3 text-sm text-warning">Many jobs are waiting. Check that the queue worker is running (see the README).</p> : null}
+        {data.queue.oldest_wait_minutes >= 2 ? (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+            <p className="font-medium">No background worker seems to be running.</p>
+            <p className="mt-1">Jobs have waited {data.queue.oldest_wait_minutes} minutes. Exports, emails, interview reminders and the notifications that come from them wait until a worker runs. In the backend folder, run <code className="rounded bg-white px-1">php artisan queue:work</code> and keep it open, and <code className="rounded bg-white px-1">php artisan schedule:work</code> for reminders (or <code className="rounded bg-white px-1">composer dev</code>, which starts both).</p>
+          </div>
+        ) : data.queue.pending > 50 ? <p className="mt-3 text-sm text-warning">Many jobs are waiting. Check that the queue worker is running (see the README).</p> : null}
         <ul className="mt-4 divide-y divide-border">
           {data.failed_jobs.map((job) => (
             <li key={job.uuid} className="flex items-center gap-3 py-2 text-sm">
