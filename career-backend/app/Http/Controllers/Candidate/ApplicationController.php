@@ -6,10 +6,12 @@ use App\Filters\ApplicationFilter;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Candidate\ApplicationIndexRequest;
 use App\Http\Requests\Candidate\ApplyRequest;
+use App\Http\Resources\CandidateApplicationDetailResource;
 use App\Http\Resources\CandidateApplicationResource;
 use App\Models\JobPosting;
 use App\Services\ApplicationEligibilityService;
 use App\Services\ApplicationService;
+use App\Services\CandidateApplicationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -38,6 +40,12 @@ class ApplicationController extends Controller
             ],
             'counts' => $filter->counts($candidate->applications()->getQuery()),
         ]);
+    }
+
+    /** One of the signed-in candidate's own applications, with its progress and interviews. */
+    public function show(Request $request, string $application, CandidateApplicationService $applications): CandidateApplicationDetailResource
+    {
+        return new CandidateApplicationDetailResource($applications->find($request->user('candidate'), $application));
     }
 
     public function eligibility(Request $request, JobPosting $jobPosting, ApplicationEligibilityService $eligibility): JsonResponse

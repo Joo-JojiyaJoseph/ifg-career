@@ -15,10 +15,14 @@ const arrow =
 
 /**
  * Server-side page controls: rows per page and "1–25 of 60" on the left, numbered pages on the right.
- * Phones show "Page 2 of 5" between the arrows instead of the numbers.
+ * Phones show "Page 2 of 5" between the arrows instead of the numbers. Hidden when everything fits on one page.
  */
 export function Pagination({ page, pageCount, perPage, perPageOptions = [25, 50, 100], onPageChange, onPerPageChange, total }) {
   const pages = Math.max(pageCount, 1)
+  // Nothing to page through: everything fits on one page even at the smallest page size, so show no controls.
+  const fitsOnePage = pages <= 1 && page <= 1 && (total === undefined || total <= Math.min(...perPageOptions))
+  if (fitsOnePage) return null
+
   const from = total ? (page - 1) * perPage + 1 : 0
   const to = total ? Math.min(page * perPage, total) : 0
 

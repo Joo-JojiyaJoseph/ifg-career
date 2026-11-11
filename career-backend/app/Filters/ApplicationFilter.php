@@ -2,6 +2,7 @@
 
 namespace App\Filters;
 
+use App\Enums\ApplicationResult;
 use App\Enums\ApplicationStatus;
 use App\Models\Application;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,6 +45,8 @@ class ApplicationFilter
             'in_review' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'in_review'))->count(),
             'shortlisted' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'shortlisted'))->count(),
             'interview_scheduled' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'interview_scheduled'))->count(),
+            'selected' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'selected'))->count(),
+            'not_selected' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'not_selected'))->count(),
             'closed' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'closed'))->count(),
         ];
     }
@@ -58,7 +61,9 @@ class ApplicationFilter
             'in_review' => $query->where('status', ApplicationStatus::UnderReview)->whereNull('result'),
             'shortlisted' => $query->where('status', ApplicationStatus::Shortlisted)->whereNull('result')->whereDoesntHave('scheduledRounds'),
             'interview_scheduled' => $query->where('status', ApplicationStatus::Shortlisted)->whereNull('result')->whereHas('scheduledRounds'),
-            'closed' => $query->where(fn ($inner) => $inner->where('status', ApplicationStatus::Rejected)->orWhereNotNull('result')),
+            'selected' => $query->where('result', ApplicationResult::Selected),
+            'not_selected' => $query->where('result', ApplicationResult::NotSelected),
+            'closed' => $query->where('status', ApplicationStatus::Rejected)->whereNull('result'),
             default => $query,
         };
     }

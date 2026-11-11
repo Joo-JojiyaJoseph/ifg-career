@@ -30,9 +30,9 @@ export function SiteFooter({ footer: setting, social = [], entities = [] }) {
   return (
     <footer className="relative isolate overflow-hidden bg-gradient-to-br from-brand-900 via-navy to-ink text-white">
       <div className="pointer-events-none absolute -right-40 -top-40 -z-10 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl" aria-hidden="true" />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-[1.3fr_1.2fr_0.8fr] lg:gap-12 2xl:max-w-7xl">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:py-14 md:grid-cols-2 lg:grid-cols-[1.3fr_1.2fr_0.8fr] lg:gap-12 2xl:max-w-7xl md:[&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
         <div id="footer-contact" className="flex flex-col gap-5">
-          <Link to="/" viewTransition className="self-start rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Back to the careers home page">
+          <Link to="/" viewTransition className="inline-flex min-h-11 items-center self-start rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Back to the careers home page">
             <GroupLogo tone="dark" />
           </Link>
           <p className="max-w-sm text-sm leading-relaxed text-white/75">{footer.closing_text || DEFAULT_CLOSING}</p>
@@ -71,7 +71,7 @@ export function SiteFooter({ footer: setting, social = [], entities = [] }) {
         <div>
           <nav aria-label="Footer">
             <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Quick links</h2>
-            <ul className="mt-2 flex flex-col">
+            <ul className="mt-2 grid grid-cols-2 gap-x-6 sm:grid-cols-3 lg:grid-cols-1">
               {links.map((item) => (
                 <li key={item.label}>
                   {item.to ? <Link className={linkClass} to={item.to} viewTransition>{item.label}</Link> : <a className={linkClass} href={item.href} onClick={item.onClick}>{item.label}</a>}

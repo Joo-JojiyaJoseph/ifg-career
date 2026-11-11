@@ -245,14 +245,14 @@ function EntityModal({ entity, canManage, onClose }) {
         <Part number="3" title="Images" hint="Large photos are resized before uploading.">
           <div className="grid gap-5">
             <FormField id={id('photo')} label="Card photo" error={errors.photo}>
-              <ImageField id={id('photo')} currentUrl={entity.theme?.photo_url} file={files.photo} onChange={(photo) => setFiles((current) => ({ ...current, photo }))} hint="Shown on the company's card and job pages. A landscape team photo works best. JPG, PNG or WebP." />
+              <ImageField id={id('photo')} currentUrl={entity.theme?.photo_url} processing={entity.theme?.photo_processing} file={files.photo} onChange={(photo) => setFiles((current) => ({ ...current, photo }))} hint="Shown on the company's card and job pages. A landscape team photo works best. JPG, PNG or WebP." />
             </FormField>
             <div className="grid gap-5 md:grid-cols-2">
               <FormField id={id('logo')} label="Logo" error={errors.logo}>
-                <ImageField id={id('logo')} accept="image/svg+xml,image/png,image/webp,image/jpeg" currentUrl={entity.theme?.logo_url} file={files.logo} onChange={(logo) => setFiles((current) => ({ ...current, logo }))} hint="SVG or a transparent PNG looks best; JPG works too." />
+                <ImageField id={id('logo')} accept="image/svg+xml,image/png,image/webp,image/jpeg" currentUrl={entity.theme?.logo_url} processing={entity.theme?.logo_processing} file={files.logo} onChange={(logo) => setFiles((current) => ({ ...current, logo }))} hint="SVG or a transparent PNG looks best; JPG works too." />
               </FormField>
               <FormField id={id('pattern')} label="Pattern (optional)" error={errors.pattern}>
-                <ImageField id={id('pattern')} accept="image/svg+xml,image/png,image/webp,image/jpeg" currentUrl={entity.theme?.pattern_url} file={files.pattern} onChange={(pattern) => setFiles((current) => ({ ...current, pattern }))} hint="A subtle background texture for job pages." />
+                <ImageField id={id('pattern')} accept="image/svg+xml,image/png,image/webp,image/jpeg" currentUrl={entity.theme?.pattern_url} processing={entity.theme?.pattern_processing} file={files.pattern} onChange={(pattern) => setFiles((current) => ({ ...current, pattern }))} hint="A subtle background texture for job pages." />
               </FormField>
             </div>
           </div>

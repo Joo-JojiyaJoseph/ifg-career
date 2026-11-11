@@ -17,7 +17,7 @@ class ApplicationIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['nullable', 'in:applied,in_review,shortlisted,interview_scheduled,closed'],
+            'status' => ['nullable', 'in:applied,in_review,shortlisted,interview_scheduled,selected,not_selected,closed'],
             'entity' => ['nullable', 'string', 'max:50'],
             'applied_from' => ['nullable', 'date'],
             'applied_to' => ['nullable', 'date'],

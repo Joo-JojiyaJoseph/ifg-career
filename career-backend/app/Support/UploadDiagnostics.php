@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Turns PHP's upload error codes into messages that say what to fix, and reports the server's upload settings
@@ -38,13 +39,23 @@ class UploadDiagnostics
         };
         $max = (string) ini_get('upload_max_filesize');
 
+        // Images are published to the public disk; the site serves them through public/storage.
+        // A link left over from an older copy of the project can point to a folder that no longer exists.
+        $link = public_path('storage');
+        $target = realpath(storage_path('app/public'));
+        $linked = (is_link($link) || is_dir($link)) && $target !== false && realpath($link) === $target;
+
         return [
             'file_uploads' => $uploads,
             'upload_max_filesize' => $max,
             'post_max_size' => (string) ini_get('post_max_size'),
+            'post_max_ok' => $bytes((string) ini_get('post_max_size')) >= 8 << 20,
             'tmp_dir' => $tmp,
+            // The portal and careers site send files inside the form, so PHP's temporary folder is no longer needed.
             'tmp_dir_writable' => $writable,
-            'ok' => $uploads && $writable && $bytes($max) >= 5 << 20,
+            'storage_linked' => $linked,
+            'public_url' => rtrim(Storage::disk('public')->url(''), '/'),
+            'ok' => $uploads && $linked && $bytes((string) ini_get('post_max_size')) >= 8 << 20,
         ];
     }
 }

@@ -76,3 +76,8 @@ export async function deleteEntity(slug) {
   await ensureCsrf()
   await client.delete(`/api/v1/hr/content/entities/${slug}`)
 }
+
+/** Whether any image in a settings or companies response is still waiting for the background worker. */
+export function anyProcessing(data) {
+  return JSON.stringify(data ?? {}).includes('_processing":true')
+}

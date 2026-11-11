@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ApplicationResult;
+use App\Enums\ApplicationStatus;
 use App\Enums\CalendarSyncStatus;
 use App\Enums\RoundStatus;
 use App\Jobs\SyncInterviewToGoogleCalendar;
@@ -237,4 +238,31 @@ it('retries a failed calendar sync', function () {
 
 it('requires a signed-in HR user', function () {
     $this->getJson('/api/v1/hr/interviews')->assertUnauthorized();
+});
+
+it('gives the candidate page each round with the results HR can record next', function () {
+    actingAsHr('Admin');
+    $round = InterviewRound::factory()->create(['status' => RoundStatus::Scheduled]);
+
+    $data = $this->getJson('/api/v1/hr/candidates/'.$round->application->candidate->public_id)->assertOk()->json('data');
+    $match = collect($data['applications'])->flatMap(fn ($application) => $application['rounds'])->firstWhere('public_id', $round->public_id);
+
+    expect($match)->not->toBeNull()
+        ->and(collect($match['allowed_statuses'])->pluck('value')->all())->toContain('passed', 'not_selected');
+});
+
+it('locks the status once an application has a final result', function () {
+    actingAsHr('Admin');
+    $round = InterviewRound::factory()->create(['status' => RoundStatus::Scheduled]);
+    $application = $round->application;
+    $application->forceFill(['status' => ApplicationStatus::Shortlisted])->save();
+
+    $this->patchJson("/api/v1/hr/rounds/{$round->public_id}/status", ['status' => 'not_selected'])->assertOk();
+
+    $this->patchJson("/api/v1/hr/applications/{$application->public_id}/status", ['status' => 'rejected'])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.status.0', 'This application already has a final result (Not selected), so its status cannot change.');
+
+    $data = $this->getJson('/api/v1/hr/applications?candidate='.$application->candidate->public_id)->assertOk()->json('data.0');
+    expect($data['result'])->toBe('not_selected')->and($data['allowed_statuses'])->toBe([]);
 });

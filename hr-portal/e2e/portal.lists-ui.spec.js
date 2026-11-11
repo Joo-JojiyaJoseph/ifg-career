@@ -27,8 +27,11 @@ test('list pages keep saved views, columns, pages and bulk actions in tidy contr
   await page.getByRole('button', { name: /^Page 2 of/ }).click()
   await expect(page.getByRole('button', { name: /^Page 2 of/ })).toHaveAttribute('aria-current', 'page')
 
-  // Selecting rows brings up the bulk action bar; clearing hides it.
+  // Selecting rows brings up the bulk action bar; clearing hides it. (Wait for page 2 to load first: new data clears a selection.)
+  await page.waitForLoadState('networkidle')
+  await expect(page.getByText(/^26–/)).toBeVisible()
   await page.getByRole('checkbox', { name: 'Select row' }).first().check()
+  await expect(page.getByRole('checkbox', { name: 'Select row' }).first()).toBeChecked()
   const bar = page.getByRole('region', { name: 'Bulk actions' })
   await expect(bar).toContainText('1 application selected')
   await bar.getByRole('button', { name: 'Clear selection' }).click()

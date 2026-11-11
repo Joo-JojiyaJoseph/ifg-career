@@ -191,6 +191,7 @@ Route::prefix('candidate')->middleware('auth:candidate')->group(function () {
     Route::post('profile/resume', [ProfileController::class, 'uploadResume']);
     Route::get('profile/resume', [ProfileController::class, 'resume']);
     Route::get('applications', [CandidateApplicationController::class, 'index']);
+    Route::get('applications/{application}', [CandidateApplicationController::class, 'show'])->where('application', '[0-9A-HJKMNP-TV-Z]{26}');
     Route::get('jobs/{jobPosting}/eligibility', [CandidateApplicationController::class, 'eligibility']);
     Route::post('jobs/{jobPosting}/apply', [CandidateApplicationController::class, 'apply'])->middleware('throttle:apply');
     Route::put('subscription', [SubscriptionController::class, 'update']);

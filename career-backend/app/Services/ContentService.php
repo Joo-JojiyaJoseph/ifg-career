@@ -314,7 +314,7 @@ class ContentService
     private function storeImage(UploadedFile $file, Model $model, string $column, int $maxWidth): void
     {
         try {
-            $this->images->queue($file, $model, $column, $maxWidth);
+            $this->images->save($file, $model, $column, $maxWidth);
         } catch (Throwable $exception) {
             throw ValidationException::withMessages(['image' => $exception->getMessage()]);
         }

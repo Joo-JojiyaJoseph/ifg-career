@@ -347,7 +347,8 @@ function candidateColumns() {
     { id: 'source', header: 'Source', enableSorting: false, cell: ({ row }) => row.original.signup_source?.label || '—' },
     { id: 'role', header: 'Latest role', enableSorting: false, cell: ({ row }) => row.original.latest_application?.role || '—' },
     { id: 'applied_at', header: 'Applied', cell: ({ row }) => formatDate(row.original.latest_application?.applied_at) },
-    { id: 'status', header: 'Status', enableSorting: false, cell: ({ row }) => row.original.latest_application?.status ? <StatusBadge status={row.original.latest_application.status} /> : '—' },
+    // A final result (Selected / Not selected) is shown in place of the status.
+    { id: 'status', header: 'Status', enableSorting: false, cell: ({ row }) => row.original.latest_application?.status ? <StatusBadge status={row.original.latest_application.result || row.original.latest_application.status} /> : '—' },
     { id: 'blacklist', header: 'Blacklist', enableSorting: false, cell: ({ row }) => row.original.is_blacklisted ? <Badge color="red-soft">Blacklisted</Badge> : '—' },
   ]
 }

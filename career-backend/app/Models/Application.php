@@ -101,7 +101,12 @@ class Application extends Model
 
     public function candidateStatusCode(): string
     {
-        if ($this->status === ApplicationStatus::Rejected || $this->result !== null) {
+        // The final result is shared with the candidate: Selected or Not selected.
+        if ($this->result !== null) {
+            return $this->result->value;
+        }
+
+        if ($this->status === ApplicationStatus::Rejected) {
             return 'closed';
         }
 
@@ -172,6 +177,11 @@ class Application extends Model
 
     public function canTransitionTo(ApplicationStatus $status): bool
     {
+        // A final result (Selected or Not selected) ends the application: its status no longer changes.
+        if ($this->result !== null) {
+            return false;
+        }
+
         $allowed = match ($this->status) {
             ApplicationStatus::Applied => [ApplicationStatus::UnderReview, ApplicationStatus::Rejected],
             ApplicationStatus::UnderReview => [ApplicationStatus::Shortlisted, ApplicationStatus::Rejected],

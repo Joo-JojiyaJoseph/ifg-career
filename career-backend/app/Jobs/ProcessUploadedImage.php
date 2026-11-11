@@ -10,6 +10,10 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/**
+ * Finishes uploads saved before images were processed during the upload request ("pending:" paths).
+ * New uploads no longer use it.
+ */
 class ProcessUploadedImage implements ShouldQueue
 {
     use Queueable;

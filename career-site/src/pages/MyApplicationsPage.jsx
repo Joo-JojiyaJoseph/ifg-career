@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { useQuery } from '@tanstack/react-query'
 import { client } from '@shared/api/createClient'
 import { formatDate } from '@shared/lib/formatDate'
@@ -22,6 +23,8 @@ const statuses = [
   { value: 'in_review', label: 'In review' },
   { value: 'shortlisted', label: 'Shortlisted' },
   { value: 'interview_scheduled', label: 'Interview scheduled' },
+  { value: 'selected', label: 'Selected' },
+  { value: 'not_selected', label: 'Not selected' },
   { value: 'closed', label: 'Closed' },
 ]
 
@@ -97,18 +100,28 @@ export function MyApplicationsPage() {
       <ul className="flex flex-col gap-3">
         {(applications.data?.data ?? []).map((application) => (
           <li key={application.public_id}>
-            <Card>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-medium text-navy">{application.role}</h2>
-                  <p className="mt-1 text-sm text-muted">Applied {formatDate(application.applied_at)}</p>
+            <Link
+              to={`/my-applications/${application.public_id}`}
+              viewTransition
+              className="group block rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            >
+              <Card className="transition duration-200 group-hover:-translate-y-0.5 group-hover:shadow-card-hover">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-medium text-navy group-hover:text-brand-700">{application.role}</h2>
+                    <p className="mt-1 text-sm text-muted">Applied {formatDate(application.applied_at)}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <EntityBadge entity={application.entity} />
+                    <StatusBadge status={application.status} />
+                    <span className="ml-1 inline-flex items-center gap-1 text-sm font-medium text-brand-700">
+                      View details
+                      <ChevronRightIcon className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <EntityBadge entity={application.entity} />
-                  <StatusBadge status={application.status} />
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           </li>
         ))}
       </ul>

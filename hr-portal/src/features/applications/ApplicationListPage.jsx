@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline'
-import { Badge } from '@shared/ui/Badge'
+import { ArrowDownTrayIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import { Badge, StatusBadge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { PageHeader } from '@shared/ui/Card'
 import { ColumnsMenu } from '@shared/ui/ColumnsMenu'
@@ -456,7 +456,14 @@ function applicationColumns(canUpdate, onStatus, onAssign, onSchedule) {
     {
       id: 'status',
       header: 'Status',
-      cell: ({ row }) => canUpdate && row.original.allowed_statuses?.length ? (
+      // A final result (Selected / Not selected) replaces the status and locks it.
+      cell: ({ row }) => row.original.result ? (
+        <span className="inline-flex items-center gap-1.5" title="Final result: the status can no longer change">
+          <StatusBadge status={row.original.result} />
+          <LockClosedIcon className="h-3.5 w-3.5 text-muted" aria-hidden="true" />
+          <span className="sr-only">(final)</span>
+        </span>
+      ) : canUpdate && row.original.allowed_statuses?.length ? (
         <Select
           id={`status-${row.original.public_id}`}
           value={row.original.status}
@@ -465,7 +472,6 @@ function applicationColumns(canUpdate, onStatus, onAssign, onSchedule) {
         />
       ) : <Badge color={row.original.status_color}>{row.original.status_label}</Badge>,
     },
-    { id: 'result', header: 'Result', enableSorting: false, cell: ({ row }) => row.original.result_label ? <Badge color={row.original.result_color}>{row.original.result_label}</Badge> : '—' },
     { id: 'applied_at', header: 'Applied', cell: ({ row }) => formatDate(row.original.applied_at) },
     { id: 'flagged', header: 'Flagged', enableSorting: false, cell: ({ row }) => row.original.is_flagged ? <Badge color="amber">Flagged</Badge> : '—' },
     {

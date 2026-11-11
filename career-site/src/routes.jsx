@@ -7,6 +7,7 @@ import { PublicLayout } from './layouts/PublicLayout'
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage').then((module) => ({ default: module.MyApplicationsPage })))
+const ApplicationDetailPage = lazy(() => import('./pages/ApplicationDetailPage').then((module) => ({ default: module.ApplicationDetailPage })))
 const NotificationSettingsPage = lazy(() => import('./pages/NotificationSettingsPage').then((module) => ({ default: module.NotificationSettingsPage })))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((module) => ({ default: module.PrivacyPage })))
 const ApplicationReceivedPage = lazy(() => import('./pages/ApplicationReceivedPage').then((module) => ({ default: module.ApplicationReceivedPage })))
@@ -30,6 +31,7 @@ export function AppRoutes() {
           <Route element={<AccountLayout />}>
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/my-applications" element={<MyApplicationsPage />} />
+            <Route path="/my-applications/:applicationId" element={<ApplicationDetailPage />} />
             <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
           </Route>
         </Route>

@@ -2,15 +2,18 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CalendarDaysIcon, CheckIcon, ChevronRightIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import { CalendarDaysIcon, CheckBadgeIcon, CheckIcon, ChevronRightIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Badge, StatusBadge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { EntityBadge } from '@shared/ui/EntityBadge'
+import { FormField } from '@shared/ui/FormField'
+import { Textarea } from '@shared/ui/Input'
 import { Select } from '@shared/ui/Select'
 import { EmptyState } from '@shared/ui/Skeleton'
 import { useToast } from '@shared/ui/Toast'
 import { formatDate } from '@shared/lib/formatDate'
 import { undoStatus, updateStatus } from '../applications/api'
+import { updateRoundStatus } from '../interviews/api'
 import { ScheduleRoundPanel } from '../interviews/ScheduleRoundPanel'
 
 const stages = ['Applied', 'Under review', 'Shortlisted', 'Interview', 'Result']
@@ -32,7 +35,7 @@ function scheduleBlocker(application) {
   if (application.status === 'rejected') return null
   if (application.status !== 'shortlisted') return 'Shortlist the application to schedule an interview.'
   if (application.rounds?.some((round) => ['scheduled', 'completed', 'not_selected'].includes(round.status))) {
-    return 'Mark the current round Passed or Not selected (in Interviews) before scheduling the next one.'
+    return 'Record the result of the current round (above) before scheduling the next one.'
   }
   return null
 }
@@ -85,8 +88,8 @@ export function CandidateApplications({ applications, candidate, canUpdate, canS
                   <p className="font-display text-lg font-semibold text-ink">{application.role}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     {application.entity ? <EntityBadge entity={application.entity} /> : null}
-                    <StatusBadge status={application.status} />
-                    {application.result_label ? <Badge color={application.result === 'selected' ? 'green' : 'red-soft'}>{application.result_label}</Badge> : null}
+                    {/* A final result replaces the status. */}
+                    <StatusBadge status={application.result || application.status} />
                     {application.is_flagged ? <Badge color="amber">Flagged</Badge> : null}
                   </div>
                 </div>
@@ -110,7 +113,16 @@ export function CandidateApplications({ applications, candidate, canUpdate, canS
                 </ol>
               )}
 
-              {(canUpdate && next.length) || canSchedule ? (
+              {canSchedule && !closed && !application.result ? <CurrentRound application={application} onDone={refresh} /> : null}
+
+              {application.result ? (
+                <p className="mt-4 flex items-start gap-2 rounded-xl border border-border bg-slate-50 px-3 py-2.5 text-sm text-muted">
+                  <LockClosedIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>
+                    Final result: <span className="font-medium text-ink">{application.result_label}</span>. This application is complete, so its status no longer changes.
+                  </span>
+                </p>
+              ) : (canUpdate && next.length) || canSchedule ? (
                 <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-end">
                   {canUpdate && next.length ? (
                     <div className="sm:w-56">
@@ -139,7 +151,7 @@ export function CandidateApplications({ applications, candidate, canUpdate, canS
                   ) : null}
                 </div>
               ) : null}
-              {canSchedule && blocker && !closed ? (
+              {canSchedule && blocker && !closed && !application.result ? (
                 <p className="mt-2 flex items-start gap-1.5 text-sm text-muted">
                   <InformationCircleIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                   {blocker}
@@ -160,3 +172,76 @@ CandidateApplications.propTypes = {
   canUpdate: PropTypes.bool,
   canSchedule: PropTypes.bool,
 }
+
+/**
+ * The round waiting for a result, with buttons to record it (Passed, Not selected, or Completed while feedback is
+ * still coming) and optional feedback. Shown on the candidate's application so HR need not go to Interviews.
+ */
+function CurrentRound({ application, onDone }) {
+  const toast = useToast()
+  const queryClient = useQueryClient()
+  const round = (application.rounds ?? []).find((item) => item.allowed_statuses?.length)
+  const [feedback, setFeedback] = useState('')
+  const [showFeedback, setShowFeedback] = useState(false)
+
+  const record = useMutation({
+    mutationFn: (value) => updateRoundStatus(round.public_id, value, feedback.trim() || null),
+    onSuccess: (updated) => {
+      toast.push({ tone: 'success', message: `${round.round_name} marked ${updated.status?.label ?? 'updated'}` })
+      if (updated.application?.result?.value === 'not_selected') toast.push({ tone: 'info', message: 'The candidate is marked Not selected for this role.' })
+      setFeedback('')
+      setShowFeedback(false)
+      queryClient.invalidateQueries({ queryKey: ['hr-interviews'] })
+      onDone()
+    },
+    onError: (error) => toast.push({ tone: 'error', message: error.message }),
+  })
+
+  if (!round?.public_id) return null
+  const styleOf = { passed: { variant: 'primary', icon: CheckBadgeIcon }, not_selected: { variant: 'danger', icon: XMarkIcon }, completed: { variant: 'secondary', icon: CheckIcon } }
+
+  return (
+    <section className="mt-4 rounded-xl border border-brand-100 bg-brand-50/60 p-3 sm:p-4" aria-label="Current interview round">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Current round</p>
+          <p className="truncate font-medium text-ink">
+            Round {round.round_number} · {round.round_name}
+          </p>
+          <p className="text-sm text-muted">
+            {formatDate(round.scheduled_at)}
+            {round.interviewer_name ? ` · ${round.interviewer_name}` : ''}
+          </p>
+        </div>
+        <Badge color={round.status_color}>{round.status_label}</Badge>
+      </div>
+      {showFeedback ? (
+        <div className="mt-3">
+          <FormField id={`feedback-${round.public_id}`} label="Feedback" hint="Visible to HR only.">
+            <Textarea id={`feedback-${round.public_id}`} rows={3} value={feedback} onChange={(event) => setFeedback(event.target.value)} />
+          </FormField>
+        </div>
+      ) : null}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {round.allowed_statuses.map((option) => {
+          const look = styleOf[option.value] ?? { variant: 'secondary', icon: CheckIcon }
+          return (
+            <Button key={option.value} size="sm" variant={look.variant} icon={look.icon} loading={record.isPending && record.variables === option.value} disabled={record.isPending} onClick={() => record.mutate(option.value)}>
+              Mark {option.label.toLowerCase()}
+            </Button>
+          )
+        })}
+        {!showFeedback ? (
+          <Button size="sm" variant="ghost" onClick={() => setShowFeedback(true)}>
+            Add feedback
+          </Button>
+        ) : null}
+      </div>
+      <p className="mt-3 text-xs text-muted">
+        The candidate sees this round's date, time and joining link under My Applications on the careers site, and later the final result (Selected or Not selected). They never see round outcomes or feedback.
+      </p>
+    </section>
+  )
+}
+
+CurrentRound.propTypes = { application: PropTypes.object.isRequired, onDone: PropTypes.func.isRequired }

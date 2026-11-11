@@ -49,8 +49,8 @@ it('lets Admin add a company with its colours, logo and photo', function () {
 
     $entity = Entity::query()->where('slug', 'brightlane')->firstOrFail();
     expect($entity->is_active)->toBeTrue()
-        ->and($entity->logo_path)->toStartWith('pending:')
-        ->and($entity->photo_path)->toStartWith('pending:');
+        ->and($entity->logo_path)->toStartWith('content/')
+        ->and($entity->photo_path)->toStartWith('content/');
 
     $slugs = array_column($this->getJson('/api/v1/public/content')->json('data.entities'), 'slug');
     expect($slugs)->toContain('brightlane');

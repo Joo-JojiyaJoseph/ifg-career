@@ -346,7 +346,7 @@ function RowMenu({ row }) {
       <MenuButton className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted hover:bg-brand-50" aria-label={`Actions for ${row.candidate.name}`}>
         <EllipsisHorizontalIcon className="h-5 w-5" />
       </MenuButton>
-      <MenuItems anchor="bottom end" className="glass z-30 w-48 rounded-2xl p-1.5">
+      <MenuItems anchor="bottom end" className="z-[60] w-52 rounded-2xl border border-border bg-white p-1.5 shadow-lift ring-1 ring-black/5 [--anchor-gap:6px] focus:outline-none">
         <MenuItem><Link to={`/candidates/${row.candidate.public_id}`} className="block min-h-11 rounded-lg px-3 py-2.5 text-sm data-[focus]:bg-brand-50">View profile</Link></MenuItem>
         <MenuItem><Link to={`/applications?candidate=${row.candidate.public_id}`} className="block min-h-11 rounded-lg px-3 py-2.5 text-sm data-[focus]:bg-brand-50">Change status</Link></MenuItem>
         <MenuItem><Link to={`/candidates/${row.candidate.public_id}?tab=notes`} className="block min-h-11 rounded-lg px-3 py-2.5 text-sm data-[focus]:bg-brand-50">Add note</Link></MenuItem>

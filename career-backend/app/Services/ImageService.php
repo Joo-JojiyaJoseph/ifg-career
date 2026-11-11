@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Jobs\ProcessUploadedImage;
+use App\Support\CacheVersion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -13,15 +13,21 @@ use RuntimeException;
 /**
  * Website images (stories, drives, badges, banners, logos).
  *
- * Uploads land on the private disk first. A queued job re-encodes them (which strips EXIF/location data),
- * resizes them and moves them to the public disk. Until then the column holds a "pending:" path that the
- * public API never exposes.
+ * Each upload is re-encoded (which strips EXIF/location data), resized and published to the public disk during
+ * the upload request itself, so it shows at once. (Older uploads may still hold a "pending:" path that the
+ * ProcessUploadedImage job finishes; the public API never exposes those.)
  */
 class ImageService
 {
     public const PENDING = 'pending:';
 
-    public function queue(UploadedFile $file, Model $model, string $column, int $maxWidth = 1600): void
+    /** Whether a stored value is an upload still waiting for the background worker. */
+    public static function isPending(mixed $path): bool
+    {
+        return is_string($path) && str_starts_with($path, self::PENDING);
+    }
+
+    public function save(UploadedFile $file, Model $model, string $column, int $maxWidth = 1600): void
     {
         // guessExtension() needs PHP's fileinfo extension; fall back to the file name when it is missing.
         try {
@@ -45,12 +51,12 @@ class ImageService
             return;
         }
 
+        // Processed straight away while the upload request runs (no background worker needed), so the image is
+        // on the site as soon as the save finishes. A file that is not a readable image is refused here.
         $pending = $file->store('uploads/pending', 'private');
-        $old = self::read($model, $column);
-        $model->forceFill([$column => self::PENDING.$pending])->save();
-        $this->deleteStored(is_string($old) ? $old : null);
-
-        ProcessUploadedImage::dispatch($model::class, $model->getKey(), $column, $pending, $maxWidth);
+        $path = $this->process($pending, $maxWidth);
+        $this->replace($model, $column, $path);
+        CacheVersion::bump('content');
     }
 
     /**
@@ -175,6 +181,12 @@ class ImageService
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '/')) {
             return $path;
+        }
+
+        // During a web request, use the address the request came in on (for example http://career-backend.test),
+        // so images work even when APP_URL in .env does not match. Elsewhere (emails, jobs), use APP_URL.
+        if (app()->bound('request') && request()->headers->has('host')) {
+            return url('storage/'.ltrim($path, '/'));
         }
 
         return Storage::disk('public')->url($path);

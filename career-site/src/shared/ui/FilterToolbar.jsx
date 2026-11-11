@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { Select } from './Select'
 
 /**
- * One tidy row above a list: search, up to two quick filters (large screens), a Filters button
+ * One tidy row above a list: search, up to two quick filters (wide screens, 1360px and up), a Filters button
  * that shows how many filters are on, and optional extra actions (saved views, columns).
  * Everything else lives in the FilterPanel.
  */
@@ -11,7 +11,7 @@ export function FilterToolbar({ search, quick, activeCount = 0, onOpen, actions 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-white/70 bg-white/60 p-2 shadow-card backdrop-blur sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">{search}</div>
-      {quick ? <div className="hidden shrink-0 items-center gap-2 lg:flex">{quick}</div> : null}
+      {quick ? <div className="hidden shrink-0 items-center gap-2 min-[1360px]:flex">{quick}</div> : null}
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <button
           type="button"

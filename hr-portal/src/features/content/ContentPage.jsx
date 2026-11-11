@@ -9,7 +9,7 @@ import { EntityChooser } from './EntityChooser'
 import { ListEditor } from './ListEditor'
 import { SettingForm } from './SettingForm'
 import { SocialLinksForm } from './SocialLinksForm'
-import { fetchEntityContent, fetchSettings } from './api'
+import { fetchEntityContent, fetchSettings, anyProcessing } from './api'
 
 const careersUrl = import.meta.env.VITE_CAREERS_URL || 'http://localhost:5173'
 
@@ -28,8 +28,9 @@ const tabs = [
 export function ContentPage() {
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') || 'banner'
-  const settings = useQuery({ queryKey: ['hr-content', 'settings'], queryFn: fetchSettings })
-  const entities = useQuery({ queryKey: ['hr-content', 'entities'], queryFn: fetchEntityContent })
+  // While an uploaded image waits to be published, check again every few seconds so it appears by itself.
+  const settings = useQuery({ queryKey: ['hr-content', 'settings'], queryFn: fetchSettings, refetchInterval: (query) => (anyProcessing(query.state.data) ? 4000 : false) })
+  const entities = useQuery({ queryKey: ['hr-content', 'entities'], queryFn: fetchEntityContent, refetchInterval: (query) => (anyProcessing(query.state.data) ? 4000 : false) })
 
   const values = settings.data ?? {}
 

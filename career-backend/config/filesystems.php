@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Off: Laravel's /storage/{path} route for this disk answered 403 for website images whenever the
+            // public/storage link was missing. Private files are served only through the app's own signed links.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

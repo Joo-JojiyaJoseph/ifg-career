@@ -51,6 +51,12 @@ class HrApplicationService
             return $this->present($application);
         }
 
+        if ($application->result !== null) {
+            throw ValidationException::withMessages([
+                'status' => 'This application already has a final result ('.$application->result->label().'), so its status cannot change.',
+            ]);
+        }
+
         if (! $application->canTransitionTo($status)) {
             throw ValidationException::withMessages([
                 'status' => 'That status change is not allowed from '.$application->status->label().'.',
@@ -98,6 +104,12 @@ class HrApplicationService
     public function undoStatus(Application $application, User $user): Application
     {
         $history = $application->statusHistories()->latest('id')->first();
+
+        if ($application->result !== null) {
+            throw ValidationException::withMessages([
+                'status' => 'This application already has a final result, so its status cannot change.',
+            ]);
+        }
 
         if (! $history || $history->changed_by !== $user->id || $history->created_at === null || $history->created_at->lt(now()->subSeconds(15))) {
             throw ValidationException::withMessages([

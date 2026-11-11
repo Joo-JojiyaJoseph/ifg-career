@@ -53,7 +53,11 @@ export function ImageField({ id, currentUrl, file, onChange, accept = 'image/jpe
         {problem ? <p className="text-xs text-danger" role="alert">{problem}</p> : null}
         {note ? <p className="text-xs text-success">{note}</p> : null}
         {file && !note && !problem ? <p className="text-xs text-muted">{file.name} · {formatBytes(file.size)}</p> : null}
-        {processing ? <p className="text-xs text-amber-700">Processing the last upload…</p> : null}
+        {processing ? (
+          <p className="text-xs text-amber-700" role="status">
+            Finishing the last upload in the background. If it is still here after a minute, the background worker is not running: see Settings → System health.
+          </p>
+        ) : null}
         {hint ? <p className="text-xs text-muted">{hint}</p> : null}
       </div>
     </div>

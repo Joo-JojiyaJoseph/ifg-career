@@ -51,6 +51,8 @@ class HrCandidateResource extends JsonResource
                 'public_id' => $this->latestApplication->public_id,
                 'role' => $this->latestApplication->display_role,
                 'status' => $this->latestApplication->status?->value,
+                // When there is a final result, the lists show it in place of the status.
+                'result' => $this->latestApplication->result?->value,
                 'applied_at' => $this->latestApplication->applied_at?->toDateString(),
                 'entity' => $this->latestApplication->relationLoaded('entity') && $this->latestApplication->entity ? [
                     'name' => $this->latestApplication->entity->name,
@@ -82,6 +84,7 @@ class HrCandidateResource extends JsonResource
                 ] : null,
                 'rounds' => $application->relationLoaded('interviewRounds')
                     ? $application->interviewRounds->map(fn ($round) => [
+                        'public_id' => $round->public_id,
                         'round_number' => $round->round_number,
                         'round_name' => $round->round_name,
                         'scheduled_at' => $round->scheduled_at?->toIso8601String(),
@@ -90,6 +93,9 @@ class HrCandidateResource extends JsonResource
                         'status_label' => $round->status?->label(),
                         'status_color' => $round->status?->color(),
                         'interviewer_name' => $round->interviewer_name,
+                        'feedback' => $round->feedback,
+                        // The results HR can record next (for example Passed or Not selected), so the candidate page can offer them.
+                        'allowed_statuses' => collect($round->allowedStatuses())->map(fn ($status) => ['value' => $status->value, 'label' => $status->label()])->values(),
                     ])->values()
                     : [],
                 'allowed_statuses' => collect(ApplicationStatus::cases())

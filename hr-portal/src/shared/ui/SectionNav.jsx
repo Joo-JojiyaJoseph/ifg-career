@@ -2,17 +2,17 @@ import PropTypes from 'prop-types'
 import { Tabs } from './Tabs'
 
 /**
- * Sections of a long settings-style page. Large screens get a sticky list on the left (with an optional
+ * Sections of a long settings-style page. Wide screens (1280px and up) get a sticky list on the left (with an optional
  * step number, icon and one-line hint per section); smaller screens get the usual scrolling pill tabs.
  * The chosen section's content goes in `children`, on the right.
  */
 export function SectionNav({ items, value, onChange, label = 'Sections', children }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start xl:gap-6">
-      <div className="min-w-0 lg:hidden">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 xl:grid-cols-[16rem_minmax(0,1fr)] xl:items-start xl:gap-6">
+      <div className="min-w-0 xl:hidden">
         <Tabs items={items.map((item) => ({ id: item.id, label: item.step ? `${item.step} · ${item.label}` : item.label, count: item.count }))} value={value} onChange={onChange} label={label} />
       </div>
-      <nav className="hidden rounded-2xl border border-white/70 bg-white/70 p-2 shadow-card backdrop-blur lg:sticky lg:top-24 lg:block" aria-label={label}>
+      <nav className="hidden rounded-2xl border border-white/70 bg-white/70 p-2 shadow-card backdrop-blur xl:sticky xl:top-24 xl:block" aria-label={label}>
         <ul className="flex flex-col gap-0.5" role="tablist" aria-orientation="vertical" aria-label={label}>
           {items.map((item) => {
             const active = item.id === value

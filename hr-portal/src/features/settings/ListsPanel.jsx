@@ -76,7 +76,7 @@ export function ListsPanel() {
           onAdd={(name) => create.mutateAsync({ type: 'departments', body: { name, entity: current || null } })}
         />
         {companyDepartments.length === 0 ? <EmptyState title={`No departments in ${label} yet`} description="Type a name above and press Enter." /> : null}
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid gap-3 md:grid-cols-[repeat(auto-fill,minmax(19rem,1fr))]">
           {companyDepartments.map((department) => (
             <DepartmentCard key={department.id} department={department} teams={(teams.data ?? []).filter((team) => team.department_id === department.id)} companies={companies} actions={actions} />
           ))}
@@ -145,7 +145,7 @@ function CompanyPicker({ companies, value, onChange, departments }) {
   const choices = [...companies.map((entity) => ({ slug: entity.slug, name: entity.name, entity })), { slug: GROUP, name: 'Whole group' }]
 
   return (
-    <div role="radiogroup" aria-label="Company" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+    <div role="radiogroup" aria-label="Company" className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))]">
       {choices.map((choice) => {
         const active = choice.slug === value
         return (

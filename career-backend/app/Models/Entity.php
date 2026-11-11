@@ -83,6 +83,10 @@ class Entity extends Model
             'logo_url' => $this->assetUrl($this->logo_path),
             'pattern_url' => $this->assetUrl($this->pattern_path),
             'photo_url' => $this->assetUrl($this->photo_path),
+            // True while an upload waits for the background worker to resize and publish it.
+            'logo_processing' => ImageService::isPending($this->logo_path),
+            'pattern_processing' => ImageService::isPending($this->pattern_path),
+            'photo_processing' => ImageService::isPending($this->photo_path),
         ]);
     }
 

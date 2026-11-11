@@ -9,15 +9,16 @@ const root = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig(({ mode }) => {
   // Optional for development: VITE_API_PROXY=http://career-backend.test (Laravel Herd, Valet, Laragon …).
   // The dev server then forwards API calls, so the browser sees one site and keeps the sign-in cookies.
-  const proxyTarget = loadEnv(mode, root, '').VITE_API_PROXY
+  const env = loadEnv(mode, root, '')
+  const proxyTarget = env.VITE_API_PROXY
+  const forward = (target) => ({ target, changeOrigin: true, secure: false, cookieDomainRewrite: { '*': '' } })
   const proxy = proxyTarget
-    ? Object.fromEntries(
-        ['/api', '/sanctum', '/storage'].map((prefix) => [
-          prefix,
-          { target: proxyTarget, changeOrigin: true, secure: false, cookieDomainRewrite: { '*': '' } },
-        ]),
-      )
-    : undefined
+    ? Object.fromEntries(['/api', '/sanctum', '/storage'].map((prefix) => [prefix, forward(proxyTarget)]))
+    : // Without a proxy, still forward Google's return trip, so a redirect address of
+      // http://localhost:5173/api/v1/auth/google/callback works with "php artisan serve" as well.
+      env.VITE_API_URL
+      ? { '/api/v1/auth/google': forward(env.VITE_API_URL) }
+      : undefined
 
   return {
     plugins: [react()],

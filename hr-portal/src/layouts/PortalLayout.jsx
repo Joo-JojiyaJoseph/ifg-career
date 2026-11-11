@@ -120,7 +120,8 @@ export function PortalLayout() {
             </MenuButton>
             <MenuItems
               transition
-              className="glass absolute right-0 z-40 mt-2 w-56 origin-top-right rounded-2xl p-1.5 transition duration-150 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
+              anchor={{ to: 'bottom end', gap: 10, padding: 12 }}
+              className="z-[70] w-60 origin-top-right rounded-2xl border border-border bg-white p-1.5 shadow-lift ring-1 ring-black/5 transition duration-150 ease-out focus:outline-none data-[closed]:scale-95 data-[closed]:opacity-0"
             >
               <MenuItem>
                 <NavLink

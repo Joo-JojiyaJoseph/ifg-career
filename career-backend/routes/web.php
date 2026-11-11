@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Public\GoogleAuthController;
+use App\Http\Controllers\Public\PublicImageController;
 use App\Http\Controllers\Public\SitemapController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,3 +23,6 @@ Route::get('unsubscribe/{token}', function (string $token) {
 })->where('token', '[A-Za-z0-9]{20,64}')->name('public.unsubscribe');
 
 Route::get('sitemap.xml', SitemapController::class)->middleware('throttle:public')->name('sitemap');
+
+// Website images, for when the public/storage link is missing or broken (normally the web server serves them).
+Route::get('storage/{path}', PublicImageController::class)->where('path', '[A-Za-z0-9/_.-]+')->middleware('throttle:public')->name('public.image');

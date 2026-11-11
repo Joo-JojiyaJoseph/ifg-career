@@ -71,9 +71,10 @@ export function SystemPanel() {
 function UploadSettings({ uploads }) {
   const rows = [
     ['Uploads allowed (file_uploads)', uploads.file_uploads ? 'On' : 'Off', uploads.file_uploads],
-    ['Largest file (upload_max_filesize)', uploads.upload_max_filesize, uploads.ok || uploads.tmp_dir_writable],
-    ['Largest request (post_max_size)', uploads.post_max_size, true],
-    ['Temporary folder (upload_tmp_dir)', uploads.tmp_dir_writable ? uploads.tmp_dir : `${uploads.tmp_dir || 'not set'} (missing or not writable)`, uploads.tmp_dir_writable],
+    ['Largest request (post_max_size)', uploads.post_max_size, uploads.post_max_ok !== false],
+    ['Image folder link (public/storage)', uploads.storage_linked ? 'In place' : 'Missing or pointing to an old folder', uploads.storage_linked !== false],
+    ['Images are served from', uploads.public_url ?? '', true],
+    ['Temporary folder (upload_tmp_dir)', uploads.tmp_dir_writable ? uploads.tmp_dir : 'Not set (not needed)', true],
   ]
   return (
     <div className="mt-5 border-t border-border pt-4">
@@ -89,7 +90,11 @@ function UploadSettings({ uploads }) {
           </div>
         ))}
       </dl>
-      {!uploads.ok ? <p className="mt-2 text-sm text-warning">Fix the settings in red in php.ini (5M or more for uploads, and a writable temporary folder), then restart PHP.</p> : null}
+      {uploads.storage_linked === false ? (
+        <p className="mt-2 text-sm text-warning">Images are still shown (the backend serves them itself), but more slowly. To fix the link, in the backend folder delete <code className="rounded bg-white px-1">public\storage</code>, then run <code className="rounded bg-white px-1">php artisan storage:link</code>.</p>
+      ) : null}
+      {uploads.post_max_ok === false ? <p className="mt-2 text-sm text-warning">Set post_max_size to 25M or more in php.ini, then restart PHP.</p> : null}
+      <p className="mt-2 text-xs text-muted">If the address above does not match your backend (for example http://career-backend.test), set APP_URL in .env to it and run php artisan optimize:clear.</p>
     </div>
   )
 }

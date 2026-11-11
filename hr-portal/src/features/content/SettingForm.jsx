@@ -59,6 +59,7 @@ export function SettingForm({ settingKey, value = {} }) {
               field={field}
               value={field.type === 'image' ? (values[field.name] instanceof File ? values[field.name] : null) : values[field.name]}
               currentImage={field.current ? value[field.current] : undefined}
+              processing={field.current ? value[field.current.replace(/_url$/, '_processing')] : undefined}
               error={errors[field.type === 'image' ? 'image' : field.name]}
               onChange={(next) => setValues((current) => ({ ...current, [field.name]: next }))}
             />

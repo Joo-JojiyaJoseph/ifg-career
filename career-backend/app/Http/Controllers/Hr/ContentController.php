@@ -75,6 +75,7 @@ class ContentController extends Controller
             foreach (['banner_image', 'image'] as $field) {
                 if (array_key_exists($field, $value)) {
                     $value[$field.'_url'] = ImageService::url($value[$field]);
+                    $value[$field.'_processing'] = ImageService::isPending($value[$field]);
                 }
             }
 
