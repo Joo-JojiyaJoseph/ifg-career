@@ -20,6 +20,7 @@ import { formatDate } from '@shared/lib/formatDate'
 import { StatusBadge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { Card } from '@shared/ui/Card'
+import { EntityLogo } from '@shared/ui/BrandLogo'
 import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
@@ -78,13 +79,16 @@ export function ApplicationDetailPage() {
         <>
           <Card className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
+              <div className="flex min-w-0 items-start gap-3">
+                <EntityLogo entity={data.entity} className="rounded-2xl" />
+                <div className="min-w-0">
                 <h1 className="font-display text-2xl font-semibold text-navy sm:text-3xl">{data.role}</h1>
                 <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
                   <li className="flex items-center gap-1.5"><CalendarDaysIcon className="h-4 w-4" aria-hidden="true" />Applied {formatDate(data.applied_at)}</li>
                   {data.department ? <li className="flex items-center gap-1.5"><BuildingOffice2Icon className="h-4 w-4" aria-hidden="true" />{data.department}</li> : null}
                   {data.job?.location ? <li className="flex items-center gap-1.5"><MapPinIcon className="h-4 w-4" aria-hidden="true" />{data.job.location}</li> : null}
                 </ul>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <EntityBadge entity={data.entity} />

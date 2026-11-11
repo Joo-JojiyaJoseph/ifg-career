@@ -13,7 +13,7 @@ export function FilterPanel({ open, onClose, onApply, onClear, applyLabel = 'Sho
     <Dialog open={open} onClose={onClose} className="relative z-50">
       <DialogBackdrop transition className="fixed inset-0 bg-ink/40 backdrop-blur-sm transition duration-200 data-[closed]:opacity-0" />
       <div className="fixed inset-0 flex justify-end">
-        <DialogPanel transition className="flex h-full w-full max-w-md flex-col border-l border-white/70 bg-white/95 shadow-lift backdrop-blur-xl transition duration-[250ms] ease-out data-[closed]:translate-x-full">
+        <DialogPanel transition className="flex h-full w-full max-w-lg flex-col border-l border-white/70 bg-white/95 shadow-lift backdrop-blur-xl transition duration-[250ms] ease-out data-[closed]:translate-x-full">
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/70 px-5 py-4">
             <DialogTitle className="flex items-center gap-2 font-display text-xl font-semibold text-ink">
               <AdjustmentsHorizontalIcon className="h-5 w-5 text-brand-600" aria-hidden="true" />

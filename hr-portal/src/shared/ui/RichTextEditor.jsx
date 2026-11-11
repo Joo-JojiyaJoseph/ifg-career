@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -14,6 +14,9 @@ import {
   NumberedListIcon,
   UnderlineIcon,
 } from '@heroicons/react/24/outline'
+import { Button } from './Button'
+import { Input } from './Input'
+import { Modal } from './Modal'
 
 /**
  * Small rich text editor (TipTap). Output is HTML; the API sanitises it again on save.
@@ -45,6 +48,19 @@ export default function RichTextEditor({ id, value = '', onChange, invalid = fal
     immediatelyRender: false,
   })
 
+  // The link being added or edited: null when the link dialog is closed.
+  const [link, setLink] = useState(null)
+  const linkValid = link !== null && (link === '' || link === 'https://' || /^(https:\/\/\S+|mailto:\S+)$/i.test(link.trim()))
+
+  function saveLink(event) {
+    event.preventDefault()
+    if (!linkValid) return
+    const href = link.trim()
+    if (href === '' || href === 'https://') editor.chain().focus().unsetLink().run()
+    else editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+    setLink(null)
+  }
+
   useEffect(() => {
     if (editor && value !== editor.getHTML() && !editor.isFocused) editor.commands.setContent(value || '', { emitUpdate: false })
   }, [editor, value])
@@ -63,13 +79,7 @@ export default function RichTextEditor({ id, value = '', onChange, invalid = fal
       label: 'Link',
       icon: LinkIcon,
       active: editor.isActive('link'),
-      run: () => {
-        const previous = editor.getAttributes('link').href ?? 'https://'
-        const href = window.prompt('Link address (https://…)', previous)
-        if (href === null) return
-        if (href === '' || href === 'https://') editor.chain().focus().unsetLink().run()
-        else if (/^(https:\/\/|mailto:)/i.test(href)) editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
-      },
+      run: () => setLink(editor.getAttributes('link').href ?? 'https://'),
     },
     { label: 'Undo', icon: ArrowUturnLeftIcon, run: () => editor.chain().focus().undo().run() },
     { label: 'Redo', icon: ArrowUturnRightIcon, run: () => editor.chain().focus().redo().run() },
@@ -93,6 +103,35 @@ export default function RichTextEditor({ id, value = '', onChange, invalid = fal
         ))}
       </div>
       <EditorContent editor={editor} />
+      <Modal
+        open={link !== null}
+        onClose={() => setLink(null)}
+        title={editor.isActive('link') ? 'Edit link' : 'Add a link'}
+        description="Use a web address starting with https:// or an email starting with mailto:. Leave it empty to remove the link."
+        icon={LinkIcon}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setLink(null)}>Cancel</Button>
+            <Button type="submit" form={`${id ?? 'editor'}-link-form`} disabled={!linkValid}>Save link</Button>
+          </>
+        }
+      >
+        <form id={`${id ?? 'editor'}-link-form`} onSubmit={saveLink}>
+          <label htmlFor={`${id ?? 'editor'}-link`} className="mb-1.5 block text-sm font-medium text-navy">Link address</label>
+          <Input
+            id={`${id ?? 'editor'}-link`}
+            value={link ?? ''}
+            onChange={(event) => setLink(event.target.value)}
+            placeholder="https://"
+            inputMode="url"
+            invalid={!linkValid}
+            aria-describedby={linkValid ? undefined : `${id ?? 'editor'}-link-error`}
+            data-autofocus
+          />
+          {linkValid ? null : <p id={`${id ?? 'editor'}-link-error`} className="mt-1.5 text-sm text-danger">Start with https:// or mailto:</p>}
+        </form>
+      </Modal>
     </div>
   )
 }

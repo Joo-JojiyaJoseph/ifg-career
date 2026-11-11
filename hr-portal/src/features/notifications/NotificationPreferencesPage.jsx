@@ -22,7 +22,7 @@ export function NotificationPreferencesPage() {
   }
 
   const dirty = Boolean(draft && source && JSON.stringify(draft) !== JSON.stringify(source))
-  useUnsavedChanges(dirty)
+  const leaveDialog = useUnsavedChanges(dirty)
 
   const save = useMutation({
     mutationFn: () => savePreferences(draft.map(({ type, in_app, email }) => ({ type, in_app, email }))),
@@ -67,6 +67,7 @@ export function NotificationPreferencesPage() {
           </ul>
         </Card>
       ) : null}
+      {leaveDialog}
     </div>
   )
 }

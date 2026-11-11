@@ -41,10 +41,12 @@ class ApplicationFilter
         $base = $this->apply(clone $query, false);
 
         return [
+            'all' => (clone $base)->count(),
             'applied' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'applied'))->count(),
             'in_review' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'in_review'))->count(),
             'shortlisted' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'shortlisted'))->count(),
             'interview_scheduled' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'interview_scheduled'))->count(),
+            'in_progress' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'in_progress'))->count(),
             'selected' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'selected'))->count(),
             'not_selected' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'not_selected'))->count(),
             'closed' => (clone $base)->tap(fn ($inner) => $this->candidateStatus($inner, 'closed'))->count(),
@@ -61,6 +63,8 @@ class ApplicationFilter
             'in_review' => $query->where('status', ApplicationStatus::UnderReview)->whereNull('result'),
             'shortlisted' => $query->where('status', ApplicationStatus::Shortlisted)->whereNull('result')->whereDoesntHave('scheduledRounds'),
             'interview_scheduled' => $query->where('status', ApplicationStatus::Shortlisted)->whereNull('result')->whereHas('scheduledRounds'),
+            // Everything still moving: no result yet and not rejected.
+            'in_progress' => $query->whereNull('result')->where('status', '!=', ApplicationStatus::Rejected),
             'selected' => $query->where('result', ApplicationResult::Selected),
             'not_selected' => $query->where('result', ApplicationResult::NotSelected),
             'closed' => $query->where('status', ApplicationStatus::Rejected)->whereNull('result'),

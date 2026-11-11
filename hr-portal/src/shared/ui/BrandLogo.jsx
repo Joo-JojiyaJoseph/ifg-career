@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
+import { BriefcaseIcon } from '@heroicons/react/24/outline'
 import { GROUP, brandAsset, entityLogoUrl } from '../brand'
 
 const tiles = {
@@ -9,7 +10,9 @@ const tiles = {
   xl: 'h-20 w-20 rounded-3xl text-xl',
 }
 
-const images = { sm: 'h-6 w-6', md: 'h-8 w-8', lg: 'h-10 w-10', xl: 'h-14 w-14' }
+// The logo fills the tile (less a little padding), so wide wordmarks stay as large and readable as possible.
+const images = { sm: 'p-1', md: 'p-1.5', lg: 'p-2', xl: 'p-2.5' }
+const icons = { sm: 'h-4 w-4', md: 'h-5 w-5', lg: 'h-6 w-6', xl: 'h-8 w-8' }
 
 /**
  * Infolks Group logo. Uses the official file from `src/shared/brand` when it exists,
@@ -45,7 +48,8 @@ export function GroupLogo({ tone = 'light', size = 'md', suffix, className = '' 
 GroupLogo.propTypes = { tone: PropTypes.oneOf(['light', 'dark']), size: PropTypes.oneOf(['md', 'lg']), suffix: PropTypes.string, className: PropTypes.string }
 
 /**
- * An entity's logo on a tile tinted with its colour, or its monogram when no logo exists yet.
+ * An entity's logo on a white tile edged with its colour, or its monogram when no logo exists yet or the logo
+ * cannot be loaded. Without an entity (a general application to the group) it shows a briefcase.
  * Decorative by default (the entity name is usually printed next to it); pass `labelled` when it stands alone.
  */
 export function EntityLogo({ entity, size = 'md', labelled = false, className = '' }) {
@@ -56,14 +60,16 @@ export function EntityLogo({ entity, size = 'md', labelled = false, className = 
 
   return (
     <span
-      className={`flex shrink-0 items-center justify-center overflow-hidden bg-[color-mix(in_srgb,var(--logo-tint)_10%,white)] ring-1 ring-[color-mix(in_srgb,var(--logo-tint)_22%,white)] ${tiles[size]} ${className}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden ring-1 ${url ? 'bg-white' : 'bg-[color-mix(in_srgb,var(--logo-tint)_10%,white)]'} ring-[color-mix(in_srgb,var(--logo-tint)_22%,white)] ${tiles[size]} ${className}`}
       style={{ '--logo-tint': primary }}
       role={labelled ? 'img' : undefined}
-      aria-label={labelled ? `${entity?.name} logo` : undefined}
+      aria-label={labelled ? `${entity?.name ?? 'Infolks Group'} logo` : undefined}
       aria-hidden={labelled ? undefined : 'true'}
     >
       {url ? (
-        <img src={url} alt="" className={`${images[size]} object-contain`} loading="lazy" onError={() => setFailed(url)} />
+        <img src={url} alt="" className={`h-full w-full object-contain ${images[size]}`} loading="lazy" onError={() => setFailed(url)} />
+      ) : !entity ? (
+        <BriefcaseIcon className={`${icons[size]} text-[var(--logo-tint)]`} />
       ) : (
         <span className="font-display font-semibold text-[var(--logo-tint)]">{entity?.name?.slice(0, 2)}</span>
       )}

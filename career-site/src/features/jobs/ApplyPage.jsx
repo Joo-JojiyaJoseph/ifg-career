@@ -84,7 +84,7 @@ function ApplyForm({ job, candidate, src }) {
       save_to_profile: false,
     },
   })
-  useUnsavedChanges(form.formState.isDirty && !submitted)
+  const leaveDialog = useUnsavedChanges(form.formState.isDirty && !submitted)
 
   const mutation = useMutation({
     mutationFn: async (values) => {
@@ -162,6 +162,7 @@ function ApplyForm({ job, candidate, src }) {
           <Button type="submit" className="w-full" loading={mutation.isPending}>Submit application</Button>
         </form>
       </Card>
+      {leaveDialog}
     </div>
   )
 }

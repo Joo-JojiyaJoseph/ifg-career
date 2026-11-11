@@ -23,9 +23,8 @@ class CandidateApplicationResource extends JsonResource
             'entity' => $this->entity ? [
                 'name' => $this->entity->name,
                 'slug' => $this->entity->slug,
-                'theme' => [
-                    'accent' => $this->entity->accent_color,
-                ],
+                // The full theme (colours and logo), so My Applications can show the company's logo.
+                'theme' => $this->entity->theme,
             ] : null,
             'applied_at' => $this->applied_at?->toDateString(),
             'status' => $this->candidateStatusCode(),

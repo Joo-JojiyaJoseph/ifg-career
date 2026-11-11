@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useInfiniteQuery, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline'
+import { AdjustmentsHorizontalIcon, BriefcaseIcon, BuildingOffice2Icon, ClockIcon, CpuChipIcon } from '@heroicons/react/24/outline'
 import PropTypes from 'prop-types'
 import { Aurora } from '@shared/ui/Aurora'
 import { EntityLogo } from '@shared/ui/BrandLogo'
@@ -12,7 +12,6 @@ import { Button } from '@shared/ui/Button'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
 import { useQuickApply } from '../apply/quickApplyContext'
 import { ErrorState } from '@shared/ui/ErrorState'
-import { FilterBar } from '@shared/ui/FilterBar'
 import { FilterChips } from '@shared/ui/FilterChips'
 import { FormField } from '@shared/ui/FormField'
 import { JobCard } from '@shared/ui/JobCard'
@@ -21,7 +20,7 @@ import { ResultCount } from '@shared/ui/ResultCount'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { Checkbox } from '@shared/ui/Input'
-import { SlideOver } from '@shared/ui/Modal'
+import { FilterPanel } from '@shared/ui/FilterPanel'
 import { useSlashFocus } from '@shared/hooks/useSlashFocus'
 import { fetchEntities, fetchPublicJobs, fetchPublicJob, fetchPublicMeta } from './api'
 
@@ -68,6 +67,7 @@ export function JobSearchPage() {
   const total = list.data?.pages[0]?.meta?.total ?? 0
   const counts = list.data?.pages[0]?.counts ?? {}
   const chips = buildChips(filters, meta.data, entities.data, update)
+  const draftActive = ['entity', 'department', 'team', 'level', 'location', 'posted'].filter((key) => draft[key]).length + (draft.skills.length ? 1 : 0) + (draft.closing_soon ? 1 : 0)
   const advancedCount = ['department', 'team', 'level', 'location', 'posted'].filter((key) => filters[key]).length + (filters.skills.length ? 1 : 0) + (filters.closing_soon ? 1 : 0)
 
   function update(patch) {
@@ -201,20 +201,19 @@ export function JobSearchPage() {
             Load more
           </Button>
         ) : null}
-        <SlideOver open={open} onClose={() => setOpen(false)} title="Filters">
-          <div className="flex flex-col gap-4">
-            {fields(draft, (patch) => setDraft((current) => ({ ...current, ...patch })))}
-            <Button
-              className="sticky bottom-0 w-full"
-              onClick={() => {
-                update(draft)
-                setOpen(false)
-              }}
-            >
-              Apply filters ({draftCount.isFetching ? '…' : draftCount.data?.meta?.total ?? 0})
-            </Button>
-          </div>
-        </SlideOver>
+        <FilterPanel
+          open={open}
+          onClose={() => setOpen(false)}
+          onClear={() => setDraft((current) => ({ ...emptyFilters, q: current.q, sort: current.sort }))}
+          onApply={() => {
+            update(draft)
+            setOpen(false)
+          }}
+          activeCount={draftActive}
+          applyLabel={draftCount.isFetching ? 'Counting…' : `Show ${draftCount.data?.meta?.total ?? 0} ${draftCount.data?.meta?.total === 1 ? 'role' : 'roles'}`}
+        >
+          {fields(draft, (patch) => setDraft((current) => ({ ...current, ...patch })))}
+        </FilterPanel>
       </div>
     </>
   )
@@ -254,89 +253,114 @@ function FilterFields({ values, onChange, meta, entities, counts }) {
   }))
 
   return (
-    <FilterBar>
-      <FormField id="entity" label="Entity">
-        <Select
-          id="entity"
-          value={values.entity}
-          onChange={(entity) => {
-            const department = (meta?.departments ?? []).find((item) => String(item.id) === values.department)
-            onChange(department?.entity && entity && department.entity !== entity ? { entity, department: '', team: '' } : { entity })
-          }}
-          placeholder="All entities"
-          options={[
-            { value: '', label: 'All entities' },
-            ...entities.map((entity) => ({ value: entity.slug, label: labelWithCount(entity.name, counts.entity?.[entity.slug]) })),
-          ]}
-        />
-      </FormField>
-      <FormField id="department" label="Department">
-        <Select
-          id="department"
-          value={values.department}
-          onChange={(department) => onChange({ department, team: '' })}
-          options={[
-            { value: '', label: 'All departments' },
-            ...departments.map((department) => ({
-              value: String(department.id),
-              label: labelWithCount(departmentLabel(department), counts.department?.[department.id]),
-            })),
-          ]}
-        />
-      </FormField>
-      <FormField id="team" label="Team">
-        <Select
-          id="team"
-          value={values.team}
-          onChange={(team) => onChange({ team })}
-          options={[{ value: '', label: 'All teams' }, ...teams.map((team) => ({ value: String(team.id), label: labelWithCount(team.name, counts.team?.[team.id]) }))]}
-        />
-      </FormField>
-      <FormField id="level" label="Level">
-        <Select
-          id="level"
-          value={values.level}
-          onChange={(level) => onChange({ level })}
-          options={[
-            { value: '', label: 'All levels' },
-            ...(meta?.enums?.job_levels ?? []).map((level) => ({
-              value: level.value,
-              label: labelWithCount(level.label, counts.level?.[level.value]),
-            })),
-          ]}
-        />
-      </FormField>
-      <FormField id="location" label="Location">
-        <Select
-          id="location"
-          value={values.location}
-          onChange={(location) => onChange({ location })}
-          options={[
-            { value: '', label: 'All locations' },
-            ...(meta?.locations ?? []).map((location) => ({ value: location, label: labelWithCount(location, counts.location?.[location]) })),
-          ]}
-        />
-      </FormField>
-      <FormField id="posted" label="Date posted">
-        <Select
-          id="posted"
-          value={values.posted}
-          onChange={(posted) => onChange({ posted })}
-          options={[
-            { value: '', label: 'Any time' },
-            { value: '24h', label: labelWithCount('Last 24 hours', counts.posted?.['24h']) },
-            { value: '7d', label: labelWithCount('Last 7 days', counts.posted?.['7d']) },
-            { value: '30d', label: labelWithCount('Last 30 days', counts.posted?.['30d']) },
-          ]}
-        />
-      </FormField>
-      <FormField id="skills" label="Skills">
-        <MultiSelect id="skills" value={values.skills} options={skillOptions} onChange={(skills) => onChange({ skills })} placeholder="Type a skill" />
-      </FormField>
-      <Checkbox label={`Closing soon${counts.closing_soon != null ? ` (${counts.closing_soon})` : ''}`} checked={values.closing_soon} onChange={(event) => onChange({ closing_soon: event.target.checked })} />
-    </FilterBar>
+    <div className="flex flex-col gap-6">
+      <FilterGroup title="Company and team" icon={BuildingOffice2Icon}>
+        <FormField id="entity" label="Company">
+          <Select
+            id="entity"
+            value={values.entity}
+            onChange={(entity) => {
+              const department = (meta?.departments ?? []).find((item) => String(item.id) === values.department)
+              onChange(department?.entity && entity && department.entity !== entity ? { entity, department: '', team: '' } : { entity })
+            }}
+            placeholder="All companies"
+            options={[
+              { value: '', label: 'All companies' },
+              ...entities.map((entity) => ({ value: entity.slug, label: labelWithCount(entity.name, counts.entity?.[entity.slug]) })),
+            ]}
+          />
+        </FormField>
+        <FormField id="department" label="Department">
+          <Select
+            id="department"
+            value={values.department}
+            onChange={(department) => onChange({ department, team: '' })}
+            options={[
+              { value: '', label: 'All departments' },
+              ...departments.map((department) => ({
+                value: String(department.id),
+                label: labelWithCount(departmentLabel(department), counts.department?.[department.id]),
+              })),
+            ]}
+          />
+        </FormField>
+        <FormField id="team" label="Team">
+          <Select
+            id="team"
+            value={values.team}
+            onChange={(team) => onChange({ team })}
+            options={[{ value: '', label: 'All teams' }, ...teams.map((team) => ({ value: String(team.id), label: labelWithCount(team.name, counts.team?.[team.id]) }))]}
+          />
+        </FormField>
+      </FilterGroup>
+      <FilterGroup title="Role" icon={BriefcaseIcon}>
+        <FormField id="level" label="Level">
+          <Select
+            id="level"
+            value={values.level}
+            onChange={(level) => onChange({ level })}
+            options={[
+              { value: '', label: 'All levels' },
+              ...(meta?.enums?.job_levels ?? []).map((level) => ({
+                value: level.value,
+                label: labelWithCount(level.label, counts.level?.[level.value]),
+              })),
+            ]}
+          />
+        </FormField>
+        <FormField id="location" label="Location">
+          <Select
+            id="location"
+            value={values.location}
+            onChange={(location) => onChange({ location })}
+            options={[
+              { value: '', label: 'All locations' },
+              ...(meta?.locations ?? []).map((location) => ({ value: location, label: labelWithCount(location, counts.location?.[location]) })),
+            ]}
+          />
+        </FormField>
+        <FormField id="posted" label="Date posted">
+          <Select
+            id="posted"
+            value={values.posted}
+            onChange={(posted) => onChange({ posted })}
+            options={[
+              { value: '', label: 'Any time' },
+              { value: '24h', label: labelWithCount('Last 24 hours', counts.posted?.['24h']) },
+              { value: '7d', label: labelWithCount('Last 7 days', counts.posted?.['7d']) },
+              { value: '30d', label: labelWithCount('Last 30 days', counts.posted?.['30d']) },
+            ]}
+          />
+        </FormField>
+      </FilterGroup>
+      <FilterGroup title="Skills" icon={CpuChipIcon} wide>
+        <FormField id="skills" label="Skills you have">
+          <MultiSelect id="skills" value={values.skills} options={skillOptions} onChange={(skills) => onChange({ skills })} placeholder="Type a skill" />
+        </FormField>
+      </FilterGroup>
+      <FilterGroup title="Deadline" icon={ClockIcon} wide>
+        <div className="rounded-2xl border border-border bg-white px-4 py-2">
+          <Checkbox label={`Closing soon${counts.closing_soon != null ? ` (${counts.closing_soon})` : ''}`} checked={values.closing_soon} onChange={(event) => onChange({ closing_soon: event.target.checked })} />
+        </div>
+      </FilterGroup>
+    </div>
   )
 }
+
+/** A titled group of filters in the panel: one column on phones, two side by side from tablet width. */
+function FilterGroup({ title, icon: Icon, wide = false, children }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+        <Icon className="h-4 w-4 text-brand-600" aria-hidden="true" />
+        {title}
+      </h3>
+      <div className={`grid grid-cols-1 gap-3 ${wide ? '' : 'sm:grid-cols-2'}`}>{children}</div>
+    </section>
+  )
+}
+
+FilterGroup.propTypes = { title: PropTypes.string.isRequired, icon: PropTypes.elementType.isRequired, wide: PropTypes.bool, children: PropTypes.node }
 
 function labelWithCount(label, count) {
   return count == null ? label : `${label} (${count})`

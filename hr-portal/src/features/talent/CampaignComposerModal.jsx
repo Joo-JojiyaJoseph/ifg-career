@@ -47,7 +47,7 @@ export function CampaignComposerModal() {
   }
 
   const dirty = step < 2 && Boolean(form.subject || form.body || form.jobs.length)
-  useUnsavedChanges(dirty && !confirming)
+  const leaveDialog = useUnsavedChanges(dirty && !confirming)
 
   const payload = { type: form.type, subject: form.subject, body: form.body || null, jobs: form.type === 'job_alert' ? form.jobs : [] }
 
@@ -118,90 +118,93 @@ export function CampaignComposerModal() {
     )
 
   return (
-    <Modal
-      open={open}
-      onClose={close}
-      size="xl"
-      icon={MegaphoneIcon}
-      title={form.type === 'job_alert' ? 'New job alert' : 'New company update'}
-      description="Only subscribed talent community members receive it. Every email includes an unsubscribe link."
-      footer={footer}
-    >
-      <ol className="mb-6 grid grid-cols-3 gap-2" aria-label="Steps">
-        {steps.map((label, index) => (
-          <li key={label} className="flex flex-col gap-2" aria-current={index === step ? 'step' : undefined}>
-            <span className={`h-1.5 rounded-full transition-colors duration-200 ${index <= step ? 'bg-brand-600' : 'bg-brand-100'}`} aria-hidden="true" />
-            <span className={`flex items-center gap-1.5 text-sm font-medium ${index === step ? 'text-brand-700' : index < step ? 'text-success' : 'text-muted'}`}>
-              {index < step ? <CheckCircleIcon className="h-4 w-4" aria-hidden="true" /> : <span className="tabular-nums">{index + 1}.</span>}
-              {label}
-            </span>
-          </li>
-        ))}
-      </ol>
+    <>
+      <Modal
+        open={open}
+        onClose={close}
+        size="xl"
+        icon={MegaphoneIcon}
+        title={form.type === 'job_alert' ? 'New job alert' : 'New company update'}
+        description="Only subscribed talent community members receive it. Every email includes an unsubscribe link."
+        footer={footer}
+      >
+        <ol className="mb-6 grid grid-cols-3 gap-2" aria-label="Steps">
+          {steps.map((label, index) => (
+            <li key={label} className="flex flex-col gap-2" aria-current={index === step ? 'step' : undefined}>
+              <span className={`h-1.5 rounded-full transition-colors duration-200 ${index <= step ? 'bg-brand-600' : 'bg-brand-100'}`} aria-hidden="true" />
+              <span className={`flex items-center gap-1.5 text-sm font-medium ${index === step ? 'text-brand-700' : index < step ? 'text-success' : 'text-muted'}`}>
+                {index < step ? <CheckCircleIcon className="h-4 w-4" aria-hidden="true" /> : <span className="tabular-nums">{index + 1}.</span>}
+                {label}
+              </span>
+            </li>
+          ))}
+        </ol>
 
-      {step === 0 ? (
-        <div className="flex flex-col gap-5">
-          <Tabs
-            value={form.type}
-            onChange={(type) => setForm((current) => ({ ...current, type }))}
-            items={[{ id: 'job_alert', label: 'Job alert' }, { id: 'company_update', label: 'Company update' }]}
-            label="Campaign type"
-          />
-          <FormField id="cp-subject" label="Subject line" required error={errors.subject}>
-            <Input id="cp-subject" value={form.subject} maxLength={200} invalid={Boolean(errors.subject)} onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))} placeholder={form.type === 'job_alert' ? 'New roles at Infolks Group this week' : 'News from Infolks Group'} />
-          </FormField>
-          {form.type === 'job_alert' ? (
-            <FormField id="cp-jobs" label="Jobs to include" required error={errors.jobs} hint="Published jobs that are still open. Links in the email are tracked as job alert applications.">
-              {jobs.isLoading ? <Skeleton className="h-11" /> : (
-                <MultiSelect id="cp-jobs" value={form.jobs} invalid={Boolean(errors.jobs)} onChange={(selected) => setForm((current) => ({ ...current, jobs: selected }))} options={jobOptions} placeholder="Search published jobs" noun="job" />
-              )}
-            </FormField>
-          ) : null}
-          <FormField id="cp-body" label={form.type === 'job_alert' ? 'Intro (optional)' : 'Message'} required={form.type === 'company_update'} error={errors.body}>
-            <Suspense fallback={<Skeleton className="h-48" />}>
-              <RichTextEditor id="cp-body" value={form.body} invalid={Boolean(errors.body)} onChange={(body) => setForm((current) => ({ ...current, body }))} />
-            </Suspense>
-          </FormField>
-        </div>
-      ) : null}
-
-      {step === 1 && preview ? (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-text"><span className="font-medium">Subject:</span> {preview.subject}</p>
-            <Tabs value={device} onChange={setDevice} items={[{ id: 'desktop', label: 'Desktop' }, { id: 'mobile', label: 'Mobile' }]} label="Preview size" />
-          </div>
-          <div className="flex justify-center rounded-2xl bg-slate-100 p-4">
-            <iframe
-              title="Email preview"
-              sandbox=""
-              srcDoc={preview.html}
-              className={`h-[32rem] rounded-xl border border-border bg-white shadow-card transition-all duration-300 ${device === 'mobile' ? 'w-[375px] max-w-full' : 'w-full max-w-[680px]'}`}
+        {step === 0 ? (
+          <div className="flex flex-col gap-5">
+            <Tabs
+              value={form.type}
+              onChange={(type) => setForm((current) => ({ ...current, type }))}
+              items={[{ id: 'job_alert', label: 'Job alert' }, { id: 'company_update', label: 'Company update' }]}
+              label="Campaign type"
             />
+            <FormField id="cp-subject" label="Subject line" required error={errors.subject}>
+              <Input id="cp-subject" value={form.subject} maxLength={200} invalid={Boolean(errors.subject)} onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))} placeholder={form.type === 'job_alert' ? 'New roles at Infolks Group this week' : 'News from Infolks Group'} />
+            </FormField>
+            {form.type === 'job_alert' ? (
+              <FormField id="cp-jobs" label="Jobs to include" required error={errors.jobs} hint="Published jobs that are still open. Links in the email are tracked as job alert applications.">
+                {jobs.isLoading ? <Skeleton className="h-11" /> : (
+                  <MultiSelect id="cp-jobs" value={form.jobs} invalid={Boolean(errors.jobs)} onChange={(selected) => setForm((current) => ({ ...current, jobs: selected }))} options={jobOptions} placeholder="Search published jobs" noun="job" />
+                )}
+              </FormField>
+            ) : null}
+            <FormField id="cp-body" label={form.type === 'job_alert' ? 'Intro (optional)' : 'Message'} required={form.type === 'company_update'} error={errors.body}>
+              <Suspense fallback={<Skeleton className="h-48" />}>
+                <RichTextEditor id="cp-body" value={form.body} invalid={Boolean(errors.body)} onChange={(body) => setForm((current) => ({ ...current, body }))} />
+              </Suspense>
+            </FormField>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {step === 2 && preview ? (
-        <div className="flex flex-col items-center gap-4 py-10 text-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-glow">
-            <PaperAirplaneIcon className="h-8 w-8" aria-hidden="true" />
-          </span>
-          <p className="font-display text-2xl font-semibold text-navy">Ready to send to {preview.recipient_count} members</p>
-          <p className="max-w-md text-sm text-muted">Emails go out in batches. Unsubscribed people are skipped automatically. You can close this window; you'll get a notification when sending finishes.</p>
-        </div>
-      ) : null}
+        {step === 1 && preview ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-text"><span className="font-medium">Subject:</span> {preview.subject}</p>
+              <Tabs value={device} onChange={setDevice} items={[{ id: 'desktop', label: 'Desktop' }, { id: 'mobile', label: 'Mobile' }]} label="Preview size" />
+            </div>
+            <div className="flex justify-center rounded-2xl bg-slate-100 p-4">
+              <iframe
+                title="Email preview"
+                sandbox=""
+                srcDoc={preview.html}
+                className={`h-[32rem] rounded-xl border border-border bg-white shadow-card transition-all duration-300 ${device === 'mobile' ? 'w-[375px] max-w-full' : 'w-full max-w-[680px]'}`}
+              />
+            </div>
+          </div>
+        ) : null}
 
-      <ConfirmDialog
-        open={confirming}
-        onClose={() => setConfirming(false)}
-        onConfirm={() => sendMutation.mutate()}
-        loading={sendMutation.isPending}
-        tone="primary"
-        title="Send this campaign?"
-        message={`"${form.subject}" will be emailed to ${preview?.recipient_count ?? 0} subscribed members. This cannot be undone.`}
-        confirmLabel="Send"
-      />
-    </Modal>
+        {step === 2 && preview ? (
+          <div className="flex flex-col items-center gap-4 py-10 text-center">
+            <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-glow">
+              <PaperAirplaneIcon className="h-8 w-8" aria-hidden="true" />
+            </span>
+            <p className="font-display text-2xl font-semibold text-navy">Ready to send to {preview.recipient_count} members</p>
+            <p className="max-w-md text-sm text-muted">Emails go out in batches. Unsubscribed people are skipped automatically. You can close this window; you'll get a notification when sending finishes.</p>
+          </div>
+        ) : null}
+
+        <ConfirmDialog
+          open={confirming}
+          onClose={() => setConfirming(false)}
+          onConfirm={() => sendMutation.mutate()}
+          loading={sendMutation.isPending}
+          tone="primary"
+          title="Send this campaign?"
+          message={`"${form.subject}" will be emailed to ${preview?.recipient_count ?? 0} subscribed members. This cannot be undone.`}
+          confirmLabel="Send"
+        />
+      </Modal>
+      {leaveDialog}
+    </>
   )
 }

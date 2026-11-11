@@ -91,3 +91,15 @@ it('needs a signed-in candidate', function () {
 
     $this->getJson('/api/v1/candidate/applications/'.$application->public_id)->assertUnauthorized();
 });
+
+it('groups a candidate\'s applications into in progress, selected, not selected and closed', function () {
+    $candidate = Candidate::factory()->create();
+    Application::factory()->for($candidate)->create(['status' => ApplicationStatus::Applied, 'result' => null]);
+    Application::factory()->for($candidate)->create(['status' => ApplicationStatus::Shortlisted, 'result' => null]);
+    Application::factory()->for($candidate)->create(['status' => ApplicationStatus::Shortlisted, 'result' => ApplicationResult::Selected]);
+    Application::factory()->for($candidate)->create(['status' => ApplicationStatus::Rejected, 'result' => null]);
+
+    $response = $this->actingAs($candidate, 'candidate')->getJson('/api/v1/candidate/applications?status=in_progress')->assertOk()->assertJsonCount(2, 'data');
+
+    expect($response->json('counts'))->toMatchArray(['all' => 4, 'in_progress' => 2, 'selected' => 1, 'not_selected' => 0, 'closed' => 1]);
+});
