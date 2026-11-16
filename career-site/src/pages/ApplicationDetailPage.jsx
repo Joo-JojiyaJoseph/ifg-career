@@ -110,8 +110,8 @@ export function ApplicationDetailPage() {
                 {data.message}
               </p>
             ) : null}
-            {data.job?.slug && data.job.is_open ? (
-              <Link to={`/jobs/${data.job.slug}`} viewTransition className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium text-brand-700 hover:underline">
+            {data.job?.path && data.job.is_open ? (
+              <Link to={data.job.path} viewTransition className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-medium text-brand-700 hover:underline">
                 View the job description
                 <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
               </Link>

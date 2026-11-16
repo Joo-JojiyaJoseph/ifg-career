@@ -62,6 +62,8 @@ class CandidateApplicationDetailResource extends CandidateApplicationResource
             'message' => self::MESSAGES[$status] ?? null,
             'job' => $this->jobPosting ? [
                 'slug' => $this->jobPosting->slug,
+                // The job page address needs the public id after the slug (as in PublicJobResource).
+                'path' => '/jobs/'.$this->jobPosting->slug.'-'.$this->jobPosting->public_id,
                 'location' => $this->jobPosting->location,
                 'is_open' => $this->jobPosting->status?->value === 'published',
             ] : null,

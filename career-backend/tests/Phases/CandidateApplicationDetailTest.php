@@ -30,7 +30,9 @@ it('shows a candidate where their application is and the details of an upcoming 
         ->getJson('/api/v1/candidate/applications/'.$application->public_id)
         ->assertOk()->json('data');
 
+    $job = $application->jobPosting;
     expect($data['status'])->toBe('interview_scheduled')
+        ->and($data['job']['path'])->toBe('/jobs/'.$job->slug.'-'.$job->public_id)
         ->and($data['message'])->toContain('interview is scheduled')
         ->and(collect($data['steps'])->pluck('state', 'key')->all())->toBe([
             'applied' => 'done', 'in_review' => 'done', 'shortlisted' => 'done', 'interviews' => 'current', 'decision' => 'next',
