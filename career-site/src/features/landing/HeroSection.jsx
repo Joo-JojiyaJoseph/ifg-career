@@ -44,7 +44,7 @@ export function HeroSection({ hero, entities = [], numbers = null }) {
       <div className="mx-auto max-w-6xl px-4 pb-14 pt-14 sm:pt-20 lg:pt-24 2xl:max-w-7xl">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10">
           <div className="min-w-0">
-            {open ? (
+            {/* {open ? (
               <m.p {...enter(0)} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold backdrop-blur sm:text-sm">
                 <span className="relative flex h-2 w-2" aria-hidden="true">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 motion-safe:animate-pulse-ring" />
@@ -52,7 +52,7 @@ export function HeroSection({ hero, entities = [], numbers = null }) {
                 </span>
                 We&rsquo;re hiring · {open} open {open === 1 ? 'role' : 'roles'}
               </m.p>
-            ) : null}
+            ) : null} */}
             {hero?.eyebrow ? (
               <m.p {...enter(0.05)} className="mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200 sm:text-sm">
                 <HeartIcon className="h-4 w-4 text-rose-400 motion-safe:animate-heartbeat" aria-hidden="true" />
