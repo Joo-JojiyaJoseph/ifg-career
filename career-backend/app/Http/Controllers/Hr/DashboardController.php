@@ -86,9 +86,12 @@ class DashboardController extends Controller
 
     private function scoped(Request $request, DashboardService $dashboard): DashboardService
     {
-        $entity = $request->validate(['entity' => ['nullable', 'string', 'max:50']])['entity'] ?? null;
+        $filters = $request->validate([
+            'entity' => ['nullable', 'string', 'max:50'],
+            'role' => ['nullable', 'string', 'max:120'],
+        ]);
 
-        return $dashboard->forEntity($entity);
+        return $dashboard->forEntity($filters['entity'] ?? null)->forRole($filters['role'] ?? null);
     }
 
     private function range(Request $request): string

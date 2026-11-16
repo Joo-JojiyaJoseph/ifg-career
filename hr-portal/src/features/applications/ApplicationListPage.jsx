@@ -22,6 +22,7 @@ import { Pagination } from '@shared/ui/Pagination'
 import { ResultCount } from '@shared/ui/ResultCount'
 import { SavedFilters } from '@shared/ui/SavedFilters'
 import { SelectionBar } from '@shared/ui/SelectionBar'
+import { StatusChangeDialog } from './StatusChangeDialog'
 import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { useToast } from '@shared/ui/Toast'
@@ -137,6 +138,8 @@ export function ApplicationListPage() {
     queryClient.invalidateQueries({ queryKey: ['hr-applications'] })
   }
 
+  // A status change waiting for HR to confirm: { row, option } for one application, { bulk: true, option } for many.
+  const [pendingStatus, setPendingStatus] = useState(null)
   const statusMutation = useMutation({
     mutationFn: ({ id, status }) => updateStatus(id, status),
     onMutate: async ({ id, status }) => {
@@ -167,6 +170,7 @@ export function ApplicationListPage() {
         duration: 5000,
         action: { label: 'Undo', onClick: () => undoMutation.mutate(variables.id) },
       })
+      setPendingStatus(null)
       refresh()
     },
     onError: (error, _variables, context) => {
@@ -195,6 +199,7 @@ export function ApplicationListPage() {
       })
       setRowSelection({})
       setBulkValue('')
+      setPendingStatus(null)
       refresh()
     },
     onError: (error) => toast.push({ tone: 'error', message: error.message }),
@@ -250,8 +255,17 @@ export function ApplicationListPage() {
 
   const chips = buildChips(filters, meta.data, entities.data, update)
   const columns = useMemo(
-    () => applicationColumns(canUpdate, (id, status) => statusMutation.mutate({ id, status }), setAssignTarget, canSchedule ? setScheduleTarget : null),
-    [canUpdate, canSchedule, statusMutation],
+    () =>
+      applicationColumns(
+        canUpdate,
+        (row, status) => {
+          const option = row.allowed_statuses?.find((item) => item.value === status)
+          if (option) setPendingStatus({ row, option })
+        },
+        setAssignTarget,
+        canSchedule ? setScheduleTarget : null,
+      ),
+    [canUpdate, canSchedule],
   )
   const tabs = [
     { id: '', label: 'All', count: counts.all ?? 0 },
@@ -319,8 +333,29 @@ export function ApplicationListPage() {
           <label htmlFor="bulk-status" className="sr-only">Bulk status</label>
           <Select id="bulk-status" value={bulkValue} onChange={setBulkValue} options={[{ value: '', label: 'Choose a status' }, ...(meta.data?.enums?.application_statuses ?? []).map((item) => ({ value: item.value, label: item.label }))]} />
         </div>
-        <Button size="sm" loading={bulkMutation.isPending} disabled={!bulkValue} onClick={() => bulkMutation.mutate()}>Update {selected.length}</Button>
+        <Button
+          size="sm"
+          loading={bulkMutation.isPending}
+          disabled={!bulkValue}
+          onClick={() => {
+            const option = (meta.data?.enums?.application_statuses ?? []).find((item) => item.value === bulkValue)
+            if (option) setPendingStatus({ bulk: true, option: { value: option.value, label: option.label } })
+          }}
+        >
+          Update {selected.length}
+        </Button>
       </SelectionBar>
+      <StatusChangeDialog
+        open={Boolean(pendingStatus)}
+        onClose={() => setPendingStatus(null)}
+        loading={statusMutation.isPending || bulkMutation.isPending}
+        onConfirm={() => (pendingStatus?.bulk ? bulkMutation.mutate() : statusMutation.mutate({ id: pendingStatus.row.public_id, status: pendingStatus.option.value }))}
+        from={pendingStatus?.bulk ? undefined : pendingStatus?.row.status}
+        to={pendingStatus?.option}
+        candidate={pendingStatus?.row?.candidate?.name}
+        role={pendingStatus?.row?.role}
+        count={pendingStatus?.bulk ? selected.length : undefined}
+      />
       {list.isLoading ? <Skeleton className="h-64" /> : null}
       {list.isError ? <ErrorState onRetry={() => list.refetch()} /> : null}
       {!list.isLoading && !list.isError && rows.length === 0 ? (
@@ -467,7 +502,7 @@ function applicationColumns(canUpdate, onStatus, onAssign, onSchedule) {
         <Select
           id={`status-${row.original.public_id}`}
           value={row.original.status}
-          onChange={(status) => onStatus(row.original.public_id, status)}
+          onChange={(status) => status !== row.original.status && onStatus(row.original, status)}
           options={[{ value: row.original.status, label: row.original.status_label }, ...row.original.allowed_statuses]}
         />
       ) : <Badge color={row.original.status_color}>{row.original.status_label}</Badge>,

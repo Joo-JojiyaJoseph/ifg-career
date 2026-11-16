@@ -13,12 +13,21 @@ test.describe('HR interview flow', () => {
     await expect(page.getByText('Active openings')).toBeVisible()
   })
 
+  test('filters the dashboard by job role and carries it into the lists (6.2)', async ({ page }) => {
+    await page.getByRole('searchbox', { name: 'Job or role' }).or(page.getByLabel('Job or role')).first().fill('Annotat')
+    await expect(page).toHaveURL(/role=Annotat/)
+    await expect(page.getByRole('link', { name: /Active openings/ })).toHaveAttribute('href', /q=Annotat/)
+    await expect(page.getByRole('link', { name: /Total applicants/ })).toHaveAttribute('href', /job=Annotat/)
+  })
+
   test('shortlists an application, schedules a round, passes it and marks the candidate Selected', async ({ page }) => {
     // Shortlist the first job application that is under review (seed data has some).
     await page.goto('/applications?status=under_review&type=job')
     const row = page.locator('tbody tr').first()
     await row.locator('[id^="status-"]').click()
     await page.getByRole('option', { name: 'Shortlisted' }).click()
+    await expect(page.getByRole('heading', { name: 'Move to Shortlisted?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Move to Shortlisted', exact: true }).click()
     await expect(page.getByText('Status updated')).toBeVisible()
 
     await page.goto('/applications?status=shortlisted&type=job')
@@ -49,6 +58,8 @@ test.describe('HR interview flow', () => {
     await page.goto('/applications?status=under_review&type=job')
     await page.locator('tbody tr').first().locator('[id^="status-"]').click()
     await page.getByRole('option', { name: 'Shortlisted' }).click()
+    await expect(page.getByRole('heading', { name: 'Move to Shortlisted?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Move to Shortlisted', exact: true }).click()
     await expect(page.getByText('Status updated')).toBeVisible()
 
     await page.goto('/applications?status=shortlisted&type=job')
@@ -73,6 +84,24 @@ test.describe('HR interview flow', () => {
     await current.getByRole('button', { name: 'Mark passed' }).click()
     await expect(page.getByText(/Culture round marked Passed/)).toBeVisible()
     await expect(current).toHaveCount(0)
+  })
+
+  test('asks for confirmation before changing a status from the candidate page', async ({ page }) => {
+    await page.goto('/applications?status=under_review&type=job')
+    const candidateUrl = await page.locator('tbody tr').first().locator('a[href^="/candidates/"]').first().getAttribute('href')
+    await page.goto(candidateUrl)
+
+    const card = page.locator('li').filter({ has: page.getByRole('group', { name: 'Move to' }) }).first()
+    await card.getByRole('button', { name: 'Reject' }).click()
+    const title = page.getByRole('heading', { name: 'Reject this application?' })
+    await expect(title).toBeVisible()
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await expect(title).toHaveCount(0)
+    await expect(page.getByText('Moved to Rejected')).toHaveCount(0)
+
+    await card.getByRole('button', { name: 'Reject' }).click()
+    await page.getByRole('button', { name: 'Reject application' }).click()
+    await expect(page.getByText('Moved to Rejected')).toBeVisible()
   })
 
   test('global search finds candidates', async ({ page }) => {

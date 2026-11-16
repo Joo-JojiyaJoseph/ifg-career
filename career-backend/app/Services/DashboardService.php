@@ -25,11 +25,33 @@ class DashboardService
 {
     private ?int $entityId = null;
 
+    /** A job role to narrow every widget to (section 6.2): a role key, a job public id or part of a job title. */
+    private ?string $role = null;
+
     public function forEntity(?string $slug): self
     {
         $this->entityId = filled($slug) ? Entity::query()->where('slug', $slug)->value('id') : null;
 
         return $this;
+    }
+
+    public function forRole(?string $role): self
+    {
+        $this->role = filled($role) ? trim((string) $role) : null;
+
+        return $this;
+    }
+
+    /** Ids of the job postings that match the role filter, as a subquery. */
+    private function roleJobIds(): Builder
+    {
+        $role = (string) $this->role;
+
+        return JobPosting::query()->withTrashed()->select('id')->where(function (Builder $jobs) use ($role) {
+            $jobs->where('public_id', $role)
+                ->orWhere('role_key', mb_strtolower($role))
+                ->orWhere('title', 'like', '%'.$role.'%');
+        });
     }
 
     /**
@@ -235,17 +257,24 @@ class DashboardService
 
     private function applications(): Builder
     {
-        return Application::query()->when($this->entityId, fn ($query) => $query->where('entity_id', $this->entityId));
+        return Application::query()
+            ->when($this->entityId, fn ($query) => $query->where('entity_id', $this->entityId))
+            ->when($this->role, fn ($query) => $query->whereIn('job_posting_id', $this->roleJobIds()));
     }
 
     private function jobs(): Builder
     {
-        return JobPosting::query()->when($this->entityId, fn ($query) => $query->where('entity_id', $this->entityId));
+        return JobPosting::query()
+            ->when($this->entityId, fn ($query) => $query->where('entity_id', $this->entityId))
+            ->when($this->role, fn ($query) => $query->whereIn('id', $this->roleJobIds()));
     }
 
     private function rounds(): Builder
     {
-        return InterviewRound::query()->when($this->entityId, fn ($query) => $query->whereHas('application', fn ($applications) => $applications->where('entity_id', $this->entityId)));
+        return InterviewRound::query()->when(
+            $this->entityId || $this->role,
+            fn ($query) => $query->whereIn('application_id', $this->applications()->select('id')),
+        );
     }
 
     /**
@@ -258,10 +287,11 @@ class DashboardService
         $start = now()->subWeeks(7)->startOfWeek();
         $query = DB::table($table)->where($column, '>=', $start)->whereNotNull($column);
 
-        if ($this->entityId) {
+        if ($this->entityId || $this->role) {
             match ($table) {
-                'applications', 'job_postings' => $query->where('entity_id', $this->entityId),
-                'interview_rounds' => $query->whereIn('application_id', Application::query()->where('entity_id', $this->entityId)->select('id')),
+                'applications' => $query->whereIn('id', $this->applications()->select('id')),
+                'job_postings' => $query->whereIn('id', $this->jobs()->select('id')),
+                'interview_rounds' => $query->whereIn('application_id', $this->applications()->select('id')),
                 default => null,
             };
         }
@@ -304,6 +334,8 @@ class DashboardService
 
     private function cached(string $widget, callable $callback): mixed
     {
-        return Cache::remember('dashboard:'.$widget.':'.($this->entityId ?? 'all'), now()->addSeconds(60), $callback);
+        $role = $this->role === null ? 'all' : md5(mb_strtolower($this->role));
+
+        return Cache::remember('dashboard:'.$widget.':'.($this->entityId ?? 'all').':'.$role, now()->addSeconds(60), $callback);
     }
 }

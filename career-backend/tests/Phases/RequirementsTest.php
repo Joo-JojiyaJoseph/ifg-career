@@ -209,6 +209,13 @@ it('AR-03, AR-05: rejection after shortlisting blocks the same role for 6 months
     $again = openJob(['title' => 'Annotator', 'role_key' => 'annotator']);
     $other = openJob(['title' => 'Designer', 'role_key' => 'designer']);
 
+    // On the job they applied for, they see that they applied, that it is closed, and when they can apply again.
+    $own = $this->getJson("/api/v1/candidate/jobs/{$job->public_id}/eligibility")->json();
+    expect(data_get($own, 'data.code', data_get($own, 'code')))->toBe('already_applied')
+        ->and(data_get($own, 'data.application.public_id', data_get($own, 'application.public_id')))->toBe($application->public_id)
+        ->and(data_get($own, 'data.application.status', data_get($own, 'application.status')))->toBe('closed')
+        ->and(data_get($own, 'data.until', data_get($own, 'until')))->toBe(now()->addMonths(6)->toDateString());
+
     $blocked = $this->getJson("/api/v1/candidate/jobs/{$again->public_id}/eligibility")->json();
     expect(data_get($blocked, 'data.code', data_get($blocked, 'code')))->toBe('role_blocked')
         ->and(data_get($blocked, 'data.message', data_get($blocked, 'message')))->toContain('You can apply for this role again after');

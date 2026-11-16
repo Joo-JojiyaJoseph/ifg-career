@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Notifications\HrNewDeviceLogin;
+use App\Support\GuardSignOut;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -142,9 +143,7 @@ class HrAuthService
 
     public function logout(): void
     {
-        Auth::guard('web')->logout();
-        session()->invalidate();
-        session()->regenerateToken();
+        GuardSignOut::end('web');
     }
 
     private function completeLogin(User $user, bool $remember, string $ip): User

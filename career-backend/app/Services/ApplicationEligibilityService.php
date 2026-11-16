@@ -13,7 +13,9 @@ use App\Models\RoleBlock;
 class ApplicationEligibilityService
 {
     /**
-     * @return array{eligible: bool, code: ?string, until: ?string, message: ?string}
+     * `application` is added when the candidate already applied for this job.
+     *
+     * @return array{eligible: bool, code: ?string, until: ?string, message: ?string, application?: array{public_id: string, status: string, applied_at: ?string}}
      */
     public function forJob(Candidate $candidate, JobPosting $job): array
     {
@@ -29,16 +31,24 @@ class ApplicationEligibilityService
             return $paused;
         }
 
-        $already = $candidate->applications()->where('job_posting_id', $job->id)->exists();
-        if ($already) {
-            return $this->deny('already_applied', null, 'You have already applied for this role.');
-        }
-
         $block = RoleBlock::query()
             ->active()
             ->where('candidate_id', $candidate->id)
             ->where('role_key', $job->role_key)
             ->first();
+
+        $already = $candidate->applications()->where('job_posting_id', $job->id)->latest('applied_at')->first();
+        if ($already) {
+            // AR-01, with what the candidate needs to see (AR-05): where their application stands and, after a
+            // rejection that blocks this role for six months (AR-03), when they can apply for it again.
+            return $this->deny('already_applied', $block?->blocked_until?->toDateString(), 'You have already applied for this role.') + [
+                'application' => [
+                    'public_id' => $already->public_id,
+                    'status' => $already->candidateStatusCode(),
+                    'applied_at' => $already->applied_at?->toIso8601String(),
+                ],
+            ];
+        }
 
         if ($block) {
             return $this->deny(

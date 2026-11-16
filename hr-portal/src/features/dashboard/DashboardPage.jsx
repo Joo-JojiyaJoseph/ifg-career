@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
@@ -31,6 +31,7 @@ import { DonutChart } from '@shared/ui/DonutChart'
 import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { PipelineStages } from '@shared/ui/PipelineStages'
+import { SearchInput } from '@shared/ui/SearchInput'
 import { Select } from '@shared/ui/Select'
 import { EmptyState, Skeleton } from '@shared/ui/Skeleton'
 import { StatCard } from '@shared/ui/StatCard'
@@ -48,7 +49,25 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const entity = params.get('entity') ?? ''
-  const scope = { entity }
+  const role = params.get('role') ?? ''
+  const scope = useMemo(() => ({ entity, role }), [entity, role])
+
+  // Entity and job role filters (section 6.2), kept in the address so a refresh or a shared link keeps them.
+  const setFilter = useCallback(
+    (key, value) => {
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          if (value) next.set(key, value)
+          else next.delete(key)
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setParams],
+  )
+  const changeRole = useCallback((value) => setFilter('role', value.trim()), [setFilter])
   const firstName = user?.name?.split(' ')[0] ?? 'there'
   const can = (permission) => user?.permissions?.includes(permission)
 
@@ -60,7 +79,15 @@ export function DashboardPage() {
   const promo = useQuery({ queryKey: ['dash', 'promo'], queryFn: () => fetchPromo(), staleTime: 600_000 })
   const teamPhoto = promo.data?.image && !promo.data.image.endsWith('.svg') ? promo.data.image : null
 
-  const withEntity = (path) => (entity ? `${path}${path.includes('?') ? '&' : '?'}entity=${entity}` : path)
+  // Links from the dashboard open the matching list with the same entity and role: jobs search by title, the other
+  // lists filter by "Job or role".
+  const withEntity = (path) => {
+    const extra = new URLSearchParams()
+    if (entity) extra.set('entity', entity)
+    if (role) extra.set(path.startsWith('/jobs') ? 'q' : 'job', role)
+    const query = extra.toString()
+    return query ? `${path}${path.includes('?') ? '&' : '?'}${query}` : path
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,7 +106,11 @@ export function DashboardPage() {
         actions={
           <>
             <div className="w-full sm:w-48">
-              <Select id="dash-entity" value={entity} onChange={(next) => setParams(next ? { entity: next } : {}, { replace: true })} options={[{ value: '', label: 'All entities' }, ...(entities.data ?? []).map((item) => ({ value: item.slug, label: item.name }))]} />
+              <label htmlFor="dash-entity" className="sr-only">Entity</label>
+              <Select id="dash-entity" value={entity} onChange={(next) => setFilter('entity', next)} options={[{ value: '', label: 'All entities' }, ...(entities.data ?? []).map((item) => ({ value: item.slug, label: item.name }))]} />
+            </div>
+            <div className="w-full sm:w-56">
+              <SearchInput id="dash-role" label="Job or role" placeholder="Job or role" value={role} onChange={changeRole} />
             </div>
             {can('jobs.manage') ? <Button icon={PaperAirplaneIcon} onClick={() => navigate('/jobs/new')}>Post a Job</Button> : null}
             {can('campaigns.send') ? <Button variant="secondary" icon={MegaphoneIcon} onClick={() => navigate('/talent/new?type=job_alert')}>Send Job Alert</Button> : null}
@@ -92,7 +123,7 @@ export function DashboardPage() {
           <StaggerItem><StatCard icon={BriefcaseIcon} tone="blue" label="Active openings" loading={stats.isLoading} to={withEntity('/jobs?status=published')} value={stats.data?.active_openings.value} delta={stats.data?.active_openings.delta} deltaKind="count" period={stats.data?.active_openings.period} spark={stats.data?.active_openings.spark} /></StaggerItem>
           <StaggerItem><StatCard icon={UserGroupIcon} tone="cyan" label="Total applicants" loading={stats.isLoading} to={withEntity('/applications')} value={stats.data?.total_applicants.value} delta={stats.data?.total_applicants.delta} period={stats.data?.total_applicants.period} spark={stats.data?.total_applicants.spark} /></StaggerItem>
           <StaggerItem><StatCard icon={StarIcon} tone="amber" label="Shortlisted" loading={stats.isLoading} to={withEntity('/applications?status=shortlisted')} value={stats.data?.shortlisted.value} delta={stats.data?.shortlisted.delta} period={stats.data?.shortlisted.period} spark={stats.data?.shortlisted.spark} /></StaggerItem>
-          <StaggerItem><StatCard icon={CalendarDaysIcon} tone="teal" label="Interviews this week" loading={stats.isLoading} to="/interviews?view=rounds&when=week" value={stats.data?.interviews_this_week.value} delta={stats.data?.interviews_this_week.delta} period={stats.data?.interviews_this_week.period} spark={stats.data?.interviews_this_week.spark} /></StaggerItem>
+          <StaggerItem><StatCard icon={CalendarDaysIcon} tone="teal" label="Interviews this week" loading={stats.isLoading} to={withEntity('/interviews?view=rounds&when=week')} value={stats.data?.interviews_this_week.value} delta={stats.data?.interviews_this_week.delta} period={stats.data?.interviews_this_week.period} spark={stats.data?.interviews_this_week.spark} /></StaggerItem>
         </Stagger>
       )}
 
@@ -141,7 +172,7 @@ function ActionChips({ data, loading, withEntity }) {
     { key: 'new_since_login', label: 'new since your last sign-in', icon: InboxArrowDownIcon, to: withEntity('/applications?status=applied') },
     { key: 'new_today', label: 'applied today', icon: DocumentTextIcon, to: withEntity(`/applications?applied_from=${new Date().toISOString().slice(0, 10)}`) },
     { key: 'quick_apply_waiting', label: 'Quick apply to review', icon: MagnifyingGlassIcon, to: '/applications?type=general&status=applied' },
-    { key: 'interviews_today', label: 'interviews today', icon: ClockIcon, to: '/interviews?view=rounds&when=today' },
+    { key: 'interviews_today', label: 'interviews today', icon: ClockIcon, to: withEntity('/interviews?view=rounds&when=today') },
     { key: 'closing_soon', label: 'jobs closing in 7 days', icon: CalendarDaysIcon, to: withEntity('/jobs?status=published&closing_within=7') },
     { key: 'sync_failed', label: 'calendar syncs to retry', icon: ExclamationTriangleIcon, to: '/interviews?view=rounds&sync=failed', warn: true },
   ]

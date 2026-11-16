@@ -48,7 +48,7 @@ export function GroupLogo({ tone = 'light', size = 'md', suffix, className = '' 
 GroupLogo.propTypes = { tone: PropTypes.oneOf(['light', 'dark']), size: PropTypes.oneOf(['md', 'lg']), suffix: PropTypes.string, className: PropTypes.string }
 
 /**
- * An entity's logo on a white tile edged with its colour, or its monogram when no logo exists yet or the logo
+ * An entity's logo on a tile tinted with its colour (light logos stay visible), or its monogram when no logo exists yet or the logo
  * cannot be loaded. Without an entity (a general application to the group) it shows a briefcase.
  * Decorative by default (the entity name is usually printed next to it); pass `labelled` when it stands alone.
  */
@@ -60,7 +60,7 @@ export function EntityLogo({ entity, size = 'md', labelled = false, className = 
 
   return (
     <span
-      className={`flex shrink-0 items-center justify-center overflow-hidden ring-1 ${url ? 'bg-white' : 'bg-[color-mix(in_srgb,var(--logo-tint)_10%,white)]'} ring-[color-mix(in_srgb,var(--logo-tint)_22%,white)] ${tiles[size]} ${className}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden ring-1 bg-[color-mix(in_srgb,var(--logo-tint)_14%,white)] ring-[color-mix(in_srgb,var(--logo-tint)_22%,white)] ${tiles[size]} ${className}`}
       style={{ '--logo-tint': primary }}
       role={labelled ? 'img' : undefined}
       aria-label={labelled ? `${entity?.name ?? 'Infolks Group'} logo` : undefined}

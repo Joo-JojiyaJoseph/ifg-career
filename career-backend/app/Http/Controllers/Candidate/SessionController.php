@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Candidate;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CandidateResource;
+use App\Support\GuardSignOut;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SessionController extends Controller
 {
@@ -19,9 +19,7 @@ class SessionController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        Auth::guard('candidate')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        GuardSignOut::end('candidate');
 
         return response()->json(['message' => 'Signed out.']);
     }

@@ -58,6 +58,21 @@ it('filters the dashboard by entity', function () {
     $this->getJson('/api/v1/hr/dashboard/stats?entity=medrays')->assertOk()->assertJsonPath('data.total_applicants.value', 1);
 });
 
+it('filters the dashboard by job role (section 6.2)', function () {
+    actingAsHr();
+    $annotator = JobPosting::factory()->published()->create(['title' => 'Data Annotator', 'role_key' => 'data-annotator']);
+    $designer = JobPosting::factory()->published()->create(['title' => 'Graphic Designer', 'role_key' => 'graphic-designer']);
+    Application::factory()->count(2)->create(['job_posting_id' => $annotator->id, 'entity_id' => $annotator->entity_id]);
+    Application::factory()->create(['job_posting_id' => $designer->id, 'entity_id' => $designer->entity_id]);
+
+    $this->getJson('/api/v1/hr/dashboard/stats?role=annotator')->assertOk()
+        ->assertJsonPath('data.total_applicants.value', 2)
+        ->assertJsonPath('data.active_openings.value', 1);
+    $this->getJson('/api/v1/hr/dashboard/stats?role=graphic-designer')->assertOk()->assertJsonPath('data.total_applicants.value', 1);
+    $this->getJson('/api/v1/hr/dashboard/pipeline?role='.$annotator->public_id)->assertOk();
+    $this->getJson('/api/v1/hr/dashboard/stats')->assertOk()->assertJsonPath('data.total_applicants.value', 3);
+});
+
 it('searches candidates and jobs from the top bar', function () {
     actingAsHr();
     Candidate::factory()->create(['name' => 'Revathi Menon']);

@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        // There is no server-rendered sign-in page: a signed-out request gets a 401 (below), never a redirect to a
+        // missing "login" route (which crashed with a 500 for requests without Accept: application/json).
+        $middleware->redirectGuestsTo(fn () => null);
         $middleware->throttleApi();
         $middleware->appendToGroup('api', InlineUploads::class);
         $middleware->append(SecurityHeaders::class);

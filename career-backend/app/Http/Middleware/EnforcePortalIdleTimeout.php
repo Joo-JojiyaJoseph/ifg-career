@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\GuardSignOut;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,9 +15,7 @@ class EnforcePortalIdleTimeout
             $last = session('hr.last_activity');
 
             if (is_string($last) && now()->diffInMinutes($last, true) >= 30) {
-                auth('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                GuardSignOut::end('web');
 
                 return response()->json([
                     'message' => 'Your session expired. Sign in again.',

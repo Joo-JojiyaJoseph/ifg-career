@@ -15,13 +15,14 @@ import {
   CpuChipIcon,
   DocumentTextIcon,
   FlagIcon,
+  InformationCircleIcon,
   LinkIcon,
   MapPinIcon,
   SparklesIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import { EntityLogo } from '@shared/ui/BrandLogo'
-import { Badge } from '@shared/ui/Badge'
+import { Badge, StatusBadge } from '@shared/ui/Badge'
 import { Button } from '@shared/ui/Button'
 import { EntityBadge } from '@shared/ui/EntityBadge'
 import { ErrorState } from '@shared/ui/ErrorState'
@@ -330,15 +331,24 @@ function ApplyPanel({ job, candidate, loading, compact = false }) {
   if (loading) return <Skeleton className={compact ? 'h-12' : 'h-56'} />
   const eligibility = candidate ? job.eligibility : null
   const applied = eligibility?.code === 'already_applied'
+  const mine = applied ? eligibility.application : null
+  const finished = ['closed', 'selected', 'not_selected'].includes(mine?.status)
   const blocked = eligibility && eligibility.eligible === false && !applied
+  const applicationLink = mine?.public_id ? `/my-applications/${mine.public_id}` : '/my-applications'
   const left = daysLeft(job)
   const remaining = windowLeft(job)
   const urgent = typeof job.days_left === 'number' && job.days_left <= 7
 
   const action = applied ? (
-    <Link to="/my-applications" viewTransition className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 font-semibold text-emerald-800 transition duration-200 hover:-translate-y-0.5 hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+    <Link
+      to={applicationLink}
+      viewTransition
+      className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border px-5 font-semibold transition duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        finished ? 'border-slate-300 bg-white text-navy hover:bg-slate-50 focus-visible:ring-brand-500' : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 focus-visible:ring-emerald-500'
+      }`}
+    >
       <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />
-      {compact ? 'Applied · track it' : 'Applied · track your application'}
+      {compact ? 'View application' : 'View your application'}
     </Link>
   ) : blocked ? null : candidate ? (
     <Link to={`/jobs/${job.public_id}/apply`} className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-700 to-brand-500 px-5 font-semibold text-white shadow-lg shadow-brand-500/30 transition duration-200 hover:-translate-y-0.5 hover:shadow-glow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2">
@@ -358,7 +368,7 @@ function ApplyPanel({ job, candidate, loading, compact = false }) {
           <p className="truncate font-semibold text-ink">{job.title}</p>
           {left ? <p className={`truncate ${urgent ? 'font-medium text-amber-700' : ''}`}>{left}</p> : null}
         </div>
-        <div className="w-48 shrink-0">{blocked ? <p className="text-xs text-navy">{eligibility.message}</p> : action}</div>
+        <div className="w-48 shrink-0">{blocked ? <p className="text-xs font-medium text-navy">{eligibility.message}</p> : action}</div>
       </div>
     )
   }
@@ -367,9 +377,30 @@ function ApplyPanel({ job, candidate, loading, compact = false }) {
     // A thin gradient border in the company's colours around a white card.
     <div className="rounded-3xl bg-gradient-to-br from-[var(--entity-primary)] via-[color-mix(in_srgb,var(--entity-accent)_60%,white)] to-[var(--entity-accent)] p-px shadow-lift">
       <div className="rounded-[calc(1.5rem-1px)] bg-white p-5">
-        <p className="font-display text-lg font-semibold text-navy">{applied ? 'You have applied' : 'Interested in this role?'}</p>
-        <p className="mt-0.5 text-sm text-muted">{applied ? 'Follow its progress in My Applications.' : 'It takes a few minutes to apply.'}</p>
-        {job.last_date_to_apply ? (
+        <p className="font-display text-lg font-semibold text-navy">{applied ? 'You applied for this role' : 'Interested in this role?'}</p>
+        {applied ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
+            {mine?.status ? <StatusBadge status={mine.status} /> : null}
+            {mine?.applied_at ? <span>Applied {formatDate(mine.applied_at)}</span> : null}
+          </div>
+        ) : (
+          <p className="mt-0.5 text-sm text-muted">It takes a few minutes to apply.</p>
+        )}
+        {applied && eligibility.until ? (
+          // AR-03 / AR-05: after a rejection the same role is closed to them for six months; other roles are not.
+          <p className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <InformationCircleIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              You can apply for this role again after <span className="font-semibold">{formatDate(eligibility.until)}</span>, when a new opening is posted.{' '}
+              <Link to="/jobs" viewTransition className="font-semibold underline">Other roles</Link> are open to you now.
+            </span>
+          </p>
+        ) : applied && finished ? (
+          <p className="mt-3 text-sm text-muted">This application is complete. You can apply for other open roles at any time.</p>
+        ) : applied ? (
+          <p className="mt-3 text-sm text-muted">Follow its progress and any interview details on your application page.</p>
+        ) : null}
+        {job.last_date_to_apply && !applied ? (
           <div className="mt-4">
             <div className="flex items-baseline justify-between gap-2 text-sm">
               <span className="text-muted">Apply by {formatDate(job.last_date_to_apply)}</span>
@@ -385,7 +416,23 @@ function ApplyPanel({ job, candidate, loading, compact = false }) {
             ) : null}
           </div>
         ) : null}
-        <div className="mt-4">{blocked ? <p className="rounded-2xl bg-brand-50 p-3 text-sm text-navy">{eligibility.message}</p> : action}</div>
+        <div className="mt-4">
+          {blocked ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">
+              <p className="flex items-start gap-2">
+                <InformationCircleIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                {eligibility.message}
+              </p>
+              {eligibility.code === 'role_blocked' ? (
+                <Link to="/jobs" viewTransition className="ml-6 mt-1 inline-flex min-h-11 items-center gap-1 font-semibold underline">
+                  See other open roles <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              ) : null}
+            </div>
+          ) : (
+            action
+          )}
+        </div>
         {!candidate ? <p className="mt-3 text-center text-xs leading-relaxed text-muted">Signing in keeps your applications and their status together in one place.</p> : null}
         <div className="mt-4 flex items-center gap-3 rounded-2xl bg-slate-50 p-2.5 ring-1 ring-border/60">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm">
