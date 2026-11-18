@@ -5,7 +5,7 @@ import { usePrefersReducedMotion } from '@shared/ui/motionPresets'
 import { SectionHeading } from './SectionHeading'
 
 /**
- * Section 4: "How we hire · Our Recruitment Process" on navy. Numbered tiles on a line that draws itself as the
+ * Section 4: "Our interview procedure" on navy. Numbered tiles on a line that draws itself as the
  * section comes into view, each with a glass card under it. One row on large screens, a vertical list below.
  */
 export function InterviewSection({ steps, section }) {
@@ -25,8 +25,7 @@ export function InterviewSection({ steps, section }) {
           id="interview-title"
           tone="dark"
           eyebrow={section?.eyebrow || `${steps.length} clear steps`}
-          title={section?.title ?? 'Our Recruitment Process'}
-          intro="What to expect after you apply. The same steps apply to every role."
+          title={section?.title ?? 'Our interview procedure'}
         />
         <div ref={ref} className="relative">
           <div className="pointer-events-none absolute bottom-8 left-[1.4rem] top-8 w-px bg-white/15 lg:hidden" aria-hidden="true">
@@ -50,7 +49,7 @@ export function InterviewSection({ steps, section }) {
                     {index + 1}
                   </span>
                   <div className="flex-1 rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur lg:w-full">
-                    <h3 className="font-display text-lg font-semibold text-white"><span className="sr-only">{number}. </span>{step.name}</h3>
+                    <h3 className="font-display text-lg font-semibold text-white [text-wrap:balance]"><span className="sr-only">{number}. </span>{step.name}</h3>
                     {step.description ? <p className="mt-2 text-sm leading-relaxed text-white/70">{step.description}</p> : null}
                   </div>
                 </m.li>

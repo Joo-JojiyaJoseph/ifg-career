@@ -19,7 +19,7 @@ test.describe('Career page content and corrections', () => {
     if (mobile) await page.keyboard.press('Escape')
 
     await expect(page.getByText('Be part of our heart')).toBeVisible()
-    await expect(page.getByRole('heading', { level: 1, name: 'Infolks Group' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Be part of our heart/ })).toBeVisible()
     await expect(page.getByText('A company with a heart').first()).toBeVisible()
     await expect(page.getByText(/Infolks Group today brings together four companies/)).toBeVisible()
 
@@ -37,14 +37,14 @@ test.describe('Career page content and corrections', () => {
   test('why join, numbers, interview steps, Quick Apply, FAQs and footer (content SEC 3–7, corrections 2–10)', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('heading', { name: 'Why Join Infolks Group' })).toBeAttached()
+    await expect(page.getByRole('heading', { name: 'A workplace built around people' })).toBeAttached()
     for (const block of ['How We Work', 'What We Provide', 'Our Culture']) await expect(page.getByRole('heading', { name: new RegExp(block) })).toBeAttached()
     await expect(page.getByText('people across the group', { exact: true }).first()).toBeAttached()      // LP-06
     await expect(page.getByText('years since 2016', { exact: true })).toBeAttached()
 
-    await expect(page.getByRole('heading', { name: 'Our Recruitment Process' })).toBeAttached()
-    for (const step of ['Apply', 'Screening', 'Round 1: Skill Test', 'Round 2: HR Round', 'Final Result']) {
-      await expect(page.getByRole('heading', { name: new RegExp(`\\d+\\. ${step.replace(/[:.]/g, '\\$&')}$`) })).toBeAttached()  // correction 9
+    await expect(page.getByRole('heading', { name: 'Our interview procedure' })).toBeAttached()
+    for (const step of ['Apply', 'Screening', 'Round 1 – Skill Test', 'Round 2 – HR Round', 'Final Result']) {
+      await expect(page.getByRole('heading', { name: new RegExp(`\\d+\\. ${step.replace(/[.–]/g, '\\$&')}$`) })).toBeAttached()  // correction 9
     }
 
     // Quick Apply fields (correction 6 and 10).

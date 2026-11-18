@@ -297,7 +297,7 @@ class ContentService
             ],
             'interview' => [
                 'eyebrow' => $interview['eyebrow'] ?? 'How we hire',
-                'title' => $interview['title'] ?? 'Our Recruitment Process',
+                'title' => $interview['title'] ?? 'Our interview procedure',
                 'image' => $url($interview['image'] ?? null),
             ],
             'quick_apply' => [

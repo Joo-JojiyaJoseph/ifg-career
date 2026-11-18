@@ -1,8 +1,7 @@
 import PropTypes from 'prop-types'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRightIcon, ArrowTopRightOnSquareIcon, BuildingOffice2Icon, CalendarDaysIcon, UserGroupIcon } from '@heroicons/react/24/outline'
-import { GROUP } from '@shared/brand'
+import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import { EntityLogo } from '@shared/ui/BrandLogo'
 import { EntityArt } from '@shared/ui/illustrations/EntityArt'
 import { Stagger, StaggerItem } from '@shared/ui/Motion'
@@ -14,11 +13,11 @@ const inWords = (count) => WORDS[count] ?? String(count)
 const host = (url) => url?.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
 /**
- * Section 2: "Our story has more than one way in". A navy story strip about the group, then one card per company:
- * its illustration in the company's colours, name, what it does, a line about working there, its open roles
- * ("Explore Opportunities") and a link to its website.
+ * Section 2: "Our story has more than one way in". One card per company, in the order HR sets (Infolks, Medrays,
+ * Webfolks, Dataways): its illustration in the company's colours, name, what it does, a line about working there,
+ * and the "Explore Opportunities" button that lists its open roles.
  */
-export function EntitiesSection({ entities, section, numbers = null }) {
+export function EntitiesSection({ entities, section }) {
   const jobs = useQuery(heroJobsQuery)
   const perEntity = jobs.data?.counts?.entity ?? {}
 
@@ -27,9 +26,7 @@ export function EntitiesSection({ entities, section, numbers = null }) {
   return (
     <section id="entities" className="scroll-mt-20 bg-white py-20 md:py-28" aria-labelledby="entities-title">
       <div className="mx-auto max-w-5xl px-4 2xl:max-w-6xl">
-        <SectionHeading id="entities-title" eyebrow={entities.length === 1 ? 'One group' : `One group, ${inWords(entities.length)} companies`} title={section?.title ?? 'Our story has more than one way in'} intro={section?.intro || 'Every open role across the group is listed on this careers site.'} />
-
-        <StoryBand count={entities.length} numbers={numbers} />
+        <SectionHeading id="entities-title" eyebrow={entities.length === 1 ? 'One group' : `One group, ${inWords(entities.length)} companies`} title={section?.title ?? 'Our story has more than one way in'} intro={section?.intro || undefined} />
 
         <Stagger as="ul" className="grid gap-6 md:grid-cols-2">
           {entities.map((entity, index) => (
@@ -42,49 +39,6 @@ export function EntitiesSection({ entities, section, numbers = null }) {
     </section>
   )
 }
-
-/**
- * The group in one band: what unites the companies (from the career page content), then three facts with icons
- * and a link to the group website. Wording follows the real number of companies.
- */
-function StoryBand({ count, numbers }) {
-  const facts = [
-    { icon: CalendarDaysIcon, value: '2016', label: 'Kerala’s first data labeling company, in Mannarkkad' },
-    numbers?.employees ? { icon: UserGroupIcon, value: `${Number(numbers.employees).toLocaleString('en-IN')}+`, label: 'people across the group' } : null,
-    { icon: BuildingOffice2Icon, value: String(count), label: count === 1 ? 'company, one group' : 'companies, one group' },
-  ].filter(Boolean)
-
-  return (
-    <div className="relative mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-ink via-navy to-brand-800 p-6 text-white shadow-lift sm:p-8 lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.6fr)] lg:items-center lg:gap-10">
-      <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan/20 blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-60 w-80 rounded-full bg-violet/25 blur-3xl" aria-hidden="true" />
-      <div className="relative">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-200">{GROUP.tagline}</p>
-        <p className="mt-2 font-display text-2xl font-semibold leading-snug [text-wrap:balance]">
-          {count > 1 ? `A group of ${inWords(count)} businesses, united by a common purpose.` : 'One group, united by a common purpose.'}
-        </p>
-        <a href={GROUP.website} target="_blank" rel="noreferrer noopener" className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/25 px-4 text-sm font-semibold transition duration-200 hover:bg-white hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
-          {host(GROUP.website)}
-          <ArrowTopRightOnSquareIcon className="h-4 w-4" aria-hidden="true" />
-          <span className="sr-only">(opens in a new tab)</span>
-        </a>
-      </div>
-      <dl className="relative mt-7 grid gap-3 sm:grid-cols-3 lg:mt-0">
-        {facts.map((fact) => (
-          <div key={fact.label} className="flex flex-col-reverse justify-end rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur">
-            <dt className="mt-1 text-sm leading-snug text-white/70">{fact.label}</dt>
-            <dd className="flex items-center gap-2.5 font-display text-2xl font-semibold">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-cyan-200" aria-hidden="true"><fact.icon className="h-5 w-5" /></span>
-              {fact.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  )
-}
-
-StoryBand.propTypes = { count: PropTypes.number.isRequired, numbers: PropTypes.object }
 
 /** One company. The tint, motto colour and links follow the company's own theme. */
 function EntityCard({ entity, index, open }) {
@@ -135,5 +89,4 @@ EntityCard.propTypes = { entity: PropTypes.object.isRequired, index: PropTypes.n
 EntitiesSection.propTypes = {
   entities: PropTypes.array.isRequired,
   section: PropTypes.shape({ title: PropTypes.string, intro: PropTypes.string }),
-  numbers: PropTypes.object,
 }

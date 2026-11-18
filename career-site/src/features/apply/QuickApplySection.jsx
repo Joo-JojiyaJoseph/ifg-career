@@ -43,7 +43,7 @@ export function QuickApplySection({ section, confirmation }) {
       <div className="mx-auto max-w-5xl px-4 2xl:max-w-6xl">
         <Reveal className="mx-auto mb-12 max-w-2xl text-center text-white">
           <PaperPlaneIllustration className="mx-auto mb-2 h-20 w-auto" />
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Two minutes, no sign-in</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">Quick Apply</p>
           <h2 id="quick-apply-title" className="mt-3 font-display text-[clamp(1.85rem,2.2vw+1rem,2.9rem)] font-semibold leading-[1.1] tracking-tight">{section?.title ?? 'Your story could begin here'}</h2>
           {paragraphs.map((text, index) => (
             <p key={index} className={`mt-3 leading-relaxed ${index ? 'text-white/70' : 'font-display text-lg text-cyan-100'}`}>{text}</p>
@@ -134,8 +134,8 @@ export function QuickApplyForm({ confirmation, bare = false }) {
           <p className="max-w-lg text-text">{confirmation?.body || mutation.data.confirmation}</p>
           {mutation.data.signed_in ? (
             <div className="flex flex-col gap-3 rounded-2xl bg-brand-50 p-4 text-sm text-navy sm:flex-row sm:items-center sm:justify-between">
-              <p>You are now signed in. Follow the status of your application in your Candidate profile.</p>
-              <Link to="/my-applications" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-brand-600 px-5 font-semibold text-white transition duration-200 hover:bg-brand-700">Candidate profile</Link>
+              <p>You are now signed in. Follow the status of your application in your Candidate Profile.</p>
+              <Link to="/my-applications" className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-brand-600 px-5 font-semibold text-white transition duration-200 hover:bg-brand-700">Candidate Profile</Link>
             </div>
           ) : null}
           {mutation.data.profile_notice ? (
@@ -187,9 +187,6 @@ export function QuickApplyForm({ confirmation, bare = false }) {
             />
           )}
         </FormField>
-        <FormField id="email" label="Email ID" required error={form.formState.errors.email?.message}>
-          <Input id="email" type="email" autoComplete="email" invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
-        </FormField>
         <FormField id="gender" label="Gender" required error={form.formState.errors.gender?.message}>
           {({ describedBy }) => (
             <Controller
@@ -200,6 +197,9 @@ export function QuickApplyForm({ confirmation, bare = false }) {
               )}
             />
           )}
+        </FormField>
+        <FormField id="email" label="Email ID" required error={form.formState.errors.email?.message}>
+          <Input id="email" type="email" autoComplete="email" invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
         </FormField>
         <div className="sm:col-span-2">
         <FormField id="phone" label="Phone number" required error={form.formState.errors.phone?.message}>
@@ -220,7 +220,7 @@ export function QuickApplyForm({ confirmation, bare = false }) {
         <FormField id="location" label="Location" required error={form.formState.errors.location?.message}>
           <Input id="location" placeholder="City or town" invalid={Boolean(form.formState.errors.location)} {...form.register('location')} />
         </FormField>
-        <div>
+        <div className="sm:col-span-2">
         <FormField id="department_id" label="Department" required error={form.formState.errors.department_id?.message}>
           {({ describedBy }) => (
             <Controller
@@ -254,7 +254,7 @@ export function QuickApplyForm({ confirmation, bare = false }) {
           />
           {form.formState.errors.privacy_consent ? <p className="text-sm text-danger" role="alert">{form.formState.errors.privacy_consent.message}</p> : null}
         </div>
-        <Button type="submit" className="w-full sm:col-span-2" loading={mutation.isPending}>Submit application</Button>
+        <Button type="submit" className="w-full sm:col-span-2" loading={mutation.isPending}>Submit Application</Button>
       </form>
     </Wrap>
   )

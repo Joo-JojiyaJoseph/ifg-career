@@ -23,27 +23,27 @@ beforeEach(function () {
 it('serves the career page copy in section order', function () {
     $content = $this->getJson('/api/v1/public/content')->assertOk()->json('data');
 
-    expect($content['hero'])->toMatchArray(['eyebrow' => 'Be part of our heart', 'title' => 'Infolks Group', 'motto' => 'A company with a heart'])
+    expect($content['hero'])->toMatchArray(['title' => 'Be part of our heart', 'motto' => 'Infolks Group | A company with a heart'])
         ->and($content['sections']['entities']['title'])->toBe('Our story has more than one way in')
-        ->and($content['about']['title'])->toBe('Why Join Infolks Group')
+        ->and($content['about']['title'])->toBe('A workplace built around people')
         ->and(array_column($content['about']['blocks'], 'title'))->toBe(['How We Work', 'What We Provide', 'Our Culture'])
-        ->and($content['sections']['interview'])->toMatchArray(['eyebrow' => 'How we hire', 'title' => 'Our Recruitment Process'])
-        ->and(array_column($content['interview_steps'], 'name'))->toBe(['Apply', 'Screening', 'Round 1: Skill Test', 'Round 2: HR Round', 'Final Result'])
+        ->and($content['sections']['interview'])->toMatchArray(['eyebrow' => 'How we hire', 'title' => 'Our interview procedure'])
+        ->and(array_column($content['interview_steps'], 'name'))->toBe(['Apply', 'Screening', 'Round 1 – Skill Test', 'Round 2 – HR Round', 'Final Result'])
         ->and($content['sections']['quick_apply']['title'])->toBe('Your story could begin here')
         ->and($content['sections']['faq']['title'])->toBe('A few things you might want to know')
         ->and($content['faqs'])->toHaveCount(7)
         ->and($content['footer']['closing_title'])->toBeNull()
-        ->and($content['hero']['company_line'])->toContain('Infolks, Medrays, Webfolks and Dataways')
+        ->and($content['hero']['company_line'])->toContain('four businesses')
         ->and(array_column($content['social_links'], 'name'))->toBe(['Instagram', 'Facebook', 'LinkedIn', 'YouTube'])
         ->and($content['quick_apply_confirmation']['title'])->toBe('Thank you for sharing your profile with us!');
 });
 
-it('carries the October 2026 FAQ corrections', function () {
+it('carries the latest career page FAQ copy', function () {
     $answers = collect($this->getJson('/api/v1/public/content')->json('data.faqs'))->pluck('answer', 'question');
 
-    expect($answers['Does Infolks Group offer internship opportunities?'])->toContain('Internship option in the top bar')
-        ->and($answers['Can I apply for more than one position?'])->toContain('after 6 months')
-        ->and($answers['How will I know the status of my application?'])->toContain('Candidate profile')
+    expect($answers['Does Infolks Group offer internship opportunities?'])->toContain('Internship option in the top navigation bar')
+        ->and($answers['Can I apply for more than one position?'])->toContain('next six months')
+        ->and($answers['How will I know the status of my application?'])->toContain('Candidate Profile button')
         ->and($answers['What happens after I submit my application?'])->toContain('confirmation email');
 });
 

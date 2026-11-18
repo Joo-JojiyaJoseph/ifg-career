@@ -1,27 +1,30 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { m } from 'framer-motion'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { HeartIcon } from '@heroicons/react/24/solid'
 import { EntityLogo } from '@shared/ui/BrandLogo'
 import { EntityArt } from '@shared/ui/illustrations/EntityArt'
 import { usePrefersReducedMotion } from '@shared/ui/motionPresets'
-import { heroJobsQuery } from '../jobs/api'
 
 /**
- * Section 1 of the career page. Navy with a faint dot grid: on the left the hiring badge, "Be part of our heart",
- * the group name and motto, the company line, the job search and quick links to each company; on the right the
- * four companies as illustrated cards; along the bottom the company numbers.
+ * Section 1 of the career page. Navy with a faint dot grid: on the left "Be part of our heart", the company line,
+ * the "Infolks Group | A company with a heart" line, the job search and quick links to each company; on the right
+ * the four companies as illustrated cards; along the bottom the company numbers (when HR has added them).
  */
 export function HeroSection({ hero, entities = [], numbers = null }) {
   const reduced = usePrefersReducedMotion()
   const navigate = useNavigate()
-  const jobs = useQuery(heroJobsQuery)
-  const open = jobs.data?.meta?.total
   const [query, setQuery] = useState('')
   const enter = (delay) => (reduced ? {} : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] } })
+  const title = hero?.title ?? 'Be part of our heart'
+  const words = title.trim().split(/\s+/)
+  const last = words.length > 1 ? words.pop() : ''
+  const lead = words.join(' ')
+  const companyLine = hero?.company_line ?? 'Infolks Group connects expertise across four businesses, bringing together people, technology, and ideas to create lasting value for businesses and the people behind them.'
+  const [brand, ...rest] = (hero?.motto ?? 'Infolks Group | A company with a heart').split('|').map((part) => part.trim())
+  const tagline = rest.join(' | ')
   const stats = [
     numbers?.years ? { value: `${numbers.years}+`, label: 'years since 2016' } : null,
     numbers?.employees ? { value: `${Number(numbers.employees).toLocaleString('en-IN')}+`, label: 'people across the group' } : null,
@@ -36,7 +39,7 @@ export function HeroSection({ hero, entities = [], numbers = null }) {
   }
 
   return (
-    <section className="relative isolate overflow-hidden bg-gradient-to-br from-brand-800 via-navy to-ink text-white" aria-label={hero?.title ?? 'Infolks Group'}>
+    <section className="relative isolate overflow-hidden bg-gradient-to-br from-brand-800 via-navy to-ink text-white" aria-label="Infolks Group careers">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(rgba(255,255,255,0.09)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_90%)]" aria-hidden="true" />
       <div className="pointer-events-none absolute -left-40 -top-40 -z-10 h-[34rem] w-[34rem] rounded-full bg-brand-500/30 blur-3xl" aria-hidden="true" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 -z-10 h-[24rem] w-[40rem] rounded-full bg-violet/25 blur-3xl" aria-hidden="true" />
@@ -44,28 +47,23 @@ export function HeroSection({ hero, entities = [], numbers = null }) {
       <div className="mx-auto max-w-6xl px-4 pb-14 pt-14 sm:pt-20 lg:pt-24 2xl:max-w-7xl">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-10">
           <div className="min-w-0">
-            {/* {open ? (
-              <m.p {...enter(0)} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-semibold backdrop-blur sm:text-sm">
-                <span className="relative flex h-2 w-2" aria-hidden="true">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 motion-safe:animate-pulse-ring" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                </span>
-                We&rsquo;re hiring · {open} open {open === 1 ? 'role' : 'roles'}
-              </m.p>
-            ) : null} */}
-            {hero?.eyebrow ? (
-              <m.p {...enter(0.05)} className="mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200 sm:text-sm">
-                <HeartIcon className="h-4 w-4 text-rose-400 motion-safe:animate-heartbeat" aria-hidden="true" />
-                {hero.eyebrow}
-              </m.p>
-            ) : null}
-            <m.h1 {...enter(0.1)} className="mt-3 whitespace-nowrap font-display text-[clamp(2.4rem,6.4vw,4.6rem)] font-semibold leading-[1.02] tracking-tight">
-              {hero?.title ?? 'Infolks Group'}
+            <m.h1 {...enter(0.05)} className="whitespace-nowrap font-display text-[8.4vw] font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[min(4.2vw,3.5rem)]">
+              {lead}{' '}
+              <span className="bg-gradient-to-r from-cyan-200 via-white to-amber-200 bg-clip-text text-transparent">
+                {last}
+                <HeartIcon className="ml-2 inline-block h-[0.6em] w-[0.6em] -translate-y-[0.08em] text-rose-400 motion-safe:animate-heartbeat" aria-hidden="true" />
+              </span>
             </m.h1>
-            <m.p {...enter(0.18)} className="mt-3 font-display text-[clamp(1.1rem,1.4vw+0.6rem,1.6rem)] font-medium">
-              <span className="bg-gradient-to-r from-cyan-200 via-white to-amber-200 bg-clip-text text-transparent">{hero?.motto ?? 'A company with a heart'}</span>
+            <m.p {...enter(0.14)} className="mt-6 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">{companyLine}</m.p>
+            <m.p {...enter(0.2)} className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold uppercase tracking-[0.2em] sm:text-sm">
+              <span className="text-white">{brand}</span>
+              {tagline ? (
+                <>
+                  <span className="hidden h-4 w-px bg-white/30 sm:block" aria-hidden="true" />
+                  <span className="text-cyan-200">{tagline}</span>
+                </>
+              ) : null}
             </m.p>
-            {hero?.company_line ? <m.p {...enter(0.24)} className="mt-5 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">{hero.company_line}</m.p> : null}
 
             <m.form {...enter(0.3)} onSubmit={search} role="search" className="mt-8 flex max-w-xl items-center gap-2 rounded-full border border-white/15 bg-white/10 p-1.5 pl-4 backdrop-blur focus-within:border-cyan/60 focus-within:ring-4 focus-within:ring-cyan/15">
               <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-white/60" aria-hidden="true" />

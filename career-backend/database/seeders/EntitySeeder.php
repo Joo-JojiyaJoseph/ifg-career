@@ -15,7 +15,7 @@ class EntitySeeder extends Seeder
                 'name' => 'Infolks',
                 'slug' => 'infolks',
                 'motto' => 'AI Data Annotation Company',
-                'short_description' => 'Bring your strengths, share your ideas, and grow with a team that values your contribution.',
+                'short_description' => 'Support the advancement of artificial intelligence with precise data annotation, helping improve data quality and create more reliable AI solutions.',
                 'photo_path' => Photos::INFOLKS_TEAM,
                 'primary_color' => '#2F4BD8',
                 'secondary_color' => '#141F6B',

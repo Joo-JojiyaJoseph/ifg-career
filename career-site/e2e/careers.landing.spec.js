@@ -6,23 +6,22 @@ test.describe('Careers landing page', () => {
     await page.goto('/')
 
     await expect(page.getByRole('link', { name: 'Infolks Group Careers home' })).toBeVisible()
-    await expect(page.getByRole('heading', { level: 1, name: 'Infolks Group' })).toBeVisible()
-    await expect(page.getByText('Be part of our heart')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Be part of our heart/ })).toBeVisible()
     await expect(page.getByText('A company with a heart').first()).toBeVisible()
     // Phones keep the navigation in the slide-out menu.
     const menu = page.getByRole('button', { name: 'Open menu' })
     const mobile = await menu.isVisible()
     if (mobile) await menu.click()
     const nav = mobile ? page.getByRole('dialog') : page.getByRole('banner')
-    for (const link of ['Careers', 'Job Search', 'Internship', 'Candidate profile']) {
+    for (const link of ['Careers', 'Job Search', 'Internship', 'Candidate Profile']) {
       await expect(nav.getByRole('link', { name: link, exact: true })).toBeVisible()
     }
     if (mobile) await page.keyboard.press('Escape')
 
     const titles = [
       'Our story has more than one way in',
-      'Why Join Infolks Group',
-      'Our Recruitment Process',
+      'A workplace built around people',
+      'Our interview procedure',
       'Your story could begin here',
       'A few things you might want to know',
     ]
@@ -38,8 +37,8 @@ test.describe('Careers landing page', () => {
 
     await expect(page.locator('footer')).toContainText('Every new person brings a new perspective')
     await expect(page.getByText('We have been saving a place for you')).toHaveCount(0)
-    await expect(page.getByText('Round 1: Skill Test')).toBeVisible()
-    await expect(page.getByText('Round 2: HR Round')).toBeVisible()
+    await expect(page.getByText('Round 1 – Skill Test')).toBeVisible()
+    await expect(page.getByText('Round 2 – HR Round')).toBeVisible()
     await expectNoHorizontalScroll(page)
   })
 

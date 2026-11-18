@@ -61,7 +61,7 @@ export function PublicLayout() {
               <NavLinks candidate={candidate} logout={logout} dark={overHero} />
             </nav>
             <div className="flex items-center gap-1 lg:hidden">
-              <Link to="/my-applications" viewTransition className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition duration-200 ${overHero ? 'text-white hover:bg-white/15' : 'text-brand-700 hover:bg-brand-100/60'}`} aria-label="Candidate profile">
+              <Link to="/my-applications" viewTransition className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition duration-200 ${overHero ? 'text-white hover:bg-white/15' : 'text-brand-700 hover:bg-brand-100/60'}`} aria-label="Candidate Profile">
                 <UserCircleIcon className="h-6 w-6" aria-hidden="true" />
               </Link>
               <Link to="/jobs" viewTransition className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition duration-200 ${overHero ? 'text-white hover:bg-white/15' : 'text-brand-700 hover:bg-brand-100/60'}`} aria-label="Search jobs">
@@ -91,7 +91,7 @@ export function PublicLayout() {
           </PageTransition>
         </main>
         <BackToTop />
-        <SiteFooter footer={content.data?.footer} social={content.data?.social_links ?? []} entities={content.data?.entities ?? []} />
+        <SiteFooter footer={content.data?.footer} social={content.data?.social_links ?? []} />
       </div>
     </QuickApplyProvider>
   )
@@ -121,7 +121,7 @@ function NavLinks({ candidate, logout, stacked = false, dark = false, onNavigate
       {stacked ? <a className={linkClass} href="/#quick-apply" onClick={(event) => { onNavigate?.(); openQuickApply(event) }}><MenuIcon icon={PaperAirplaneIcon} />Quick apply</a> : null}
       {/* Candidate profile: the candidate's applications and their status. Guests are asked to sign in there. */}
       {stacked ? (
-        <Link className={linkClass} to="/my-applications" onClick={onNavigate}><MenuIcon icon={DocumentTextIcon} />Candidate profile</Link>
+        <Link className={linkClass} to="/my-applications" onClick={onNavigate}><MenuIcon icon={DocumentTextIcon} />Candidate Profile</Link>
       ) : (
         <Link
           to="/my-applications"
@@ -129,7 +129,7 @@ function NavLinks({ candidate, logout, stacked = false, dark = false, onNavigate
           className={`inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 ${dark ? 'glass-dark text-white' : 'border border-brand-200 bg-white/80 text-brand-700 hover:bg-brand-50'}`}
         >
           <UserCircleIcon className="h-5 w-5" aria-hidden="true" />
-          Candidate profile
+          Candidate Profile
         </Link>
       )}
       {candidate && stacked ? (

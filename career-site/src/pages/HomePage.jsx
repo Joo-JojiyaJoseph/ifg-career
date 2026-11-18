@@ -10,9 +10,7 @@ import { EntitiesSection } from '../features/landing/EntitiesSection'
 import { FaqSection } from '../features/landing/FaqSection'
 import { HeroSection } from '../features/landing/HeroSection'
 import { InterviewSection } from '../features/landing/InterviewSection'
-import { LifeSection } from '../features/landing/LifeSection'
-import { RecognitionsSection } from '../features/landing/RecognitionsSection'
-import { contentQuery, culturePhotos } from '../features/landing/api'
+import { contentQuery } from '../features/landing/api'
 
 const authErrors = {
   google_not_configured: 'Google sign-in is not configured yet. Add the Google client id and secret to the API.',
@@ -23,8 +21,8 @@ const authErrors = {
 
 /**
  * The careers landing page, following the Infolks Group career page document:
- * 1 hero, 2 our companies, 3 a place to belong, 4 interview procedure, 5 quick apply, 6 FAQs.
- * The navigation bar and the footer (7) come from PublicLayout.
+ * 1 hero, 2 our story (the four companies), 3 a workplace built around people, 4 our interview procedure,
+ * 5 quick apply, 6 FAQs. The navigation bar (part of 1) and the footer (7) come from PublicLayout.
  */
 export function HomePage() {
   const [params] = useSearchParams()
@@ -60,19 +58,16 @@ export function HomePage() {
   }
 
   const data = content.data
-  const photos = culturePhotos(data)
   const sections = data.sections ?? {}
 
   return (
     <>
       <HeroSection hero={data.hero} entities={data.entities ?? []} numbers={data.company_numbers} />
-      <EntitiesSection entities={data.entities ?? []} section={sections.entities} numbers={data.company_numbers} />
+      <EntitiesSection entities={data.entities ?? []} section={sections.entities} />
       <BelongSection about={data.about} />
       <InterviewSection steps={data.interview_steps} section={sections.interview} />
-      <LifeSection stories={data.stories ?? []} drives={data.drives ?? []} photos={photos} videos={(data.media ?? []).filter((item) => item.youtube_id)} />
       <QuickApplySection section={sections.quick_apply} confirmation={data.quick_apply_confirmation} />
       <FaqSection faqs={data.faqs} section={sections.faq} />
-      <RecognitionsSection recognitions={data.recognitions ?? []} />
     </>
   )
 }

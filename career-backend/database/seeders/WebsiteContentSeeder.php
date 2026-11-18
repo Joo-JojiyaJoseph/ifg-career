@@ -22,10 +22,10 @@ class WebsiteContentSeeder extends Seeder
     {
         $settings = [
             'hero' => [
-                'eyebrow' => 'Be part of our heart',
-                'title' => 'Infolks Group',
-                'motto' => 'A company with a heart',
-                'company_line' => 'Founded in 2016 in Mannarkkad, Kerala, as the state’s first data labeling service provider, Infolks Group today brings together four companies: Infolks, Medrays, Webfolks and Dataways.',
+                'eyebrow' => null,
+                'title' => 'Be part of our heart',
+                'motto' => 'Infolks Group | A company with a heart',
+                'company_line' => 'Infolks Group connects expertise across four businesses, bringing together people, technology, and ideas to create lasting value for businesses and the people behind them.',
                 'banner_image' => Photos::INFIESTA,
             ],
             'company_numbers' => [
@@ -38,12 +38,12 @@ class WebsiteContentSeeder extends Seeder
                 'intro' => null,
             ],
             'about_intro' => [
-                'title' => 'Why Join Infolks Group',
-                'intro' => "It's the shared laughter, the helping hands, the new things learned, and the little wins along the way that make a workplace special.\n\nA place where you can be yourself, discover what you're capable of, and grow alongside people who cheer you on. Because the best things are built together.",
+                'title' => 'A workplace built around people',
+                'intro' => 'We are committed to helping individuals realise their professional potential. By encouraging skill development, recognising talent, and creating opportunities for advancement, we support career growth at every stage.',
             ],
             'interview_section' => [
                 'eyebrow' => 'How we hire',
-                'title' => 'Our Recruitment Process',
+                'title' => 'Our interview procedure',
                 'image' => Photos::WORK_LIFE_BALANCE,
             ],
             'quick_apply_section' => [
@@ -88,14 +88,14 @@ class WebsiteContentSeeder extends Seeder
         $this->publishOnly(AboutBlock::class, 'title', [
             ['How We Work', ['body' => 'We believe everyone deserves an equal opportunity to learn, contribute, and move forward. With open communication, fair practices, and trust in individual abilities, we encourage people to do their best work in their own way.', 'heroicon_name' => 'UserGroupIcon']],
             ['What We Provide', ['body' => 'Your growth matters beyond your work. From learning opportunities and employee benefits to health support and a balanced workday, we care about making your professional journey fulfilling.', 'heroicon_name' => 'AcademicCapIcon']],
-            ['Our Culture', ['body' => 'Work is only one part of what brings us together. Festival celebrations, football tournaments, company trips, birthday celebrations, and everyday conversations make up our worklife. We find reasons to celebrate, moments to connect, and many ways to make memories together.', 'heroicon_name' => 'HeartIcon']],
+            ['Our Culture', ['body' => 'Work is only one part of what brings us together. Festival celebrations, football tournaments, company trips, birthday celebrations, and everyday conversations make up our work life. We find reasons to celebrate, moments to connect, and many ways to make memories together.', 'heroicon_name' => 'HeartIcon']],
         ]);
 
         $this->publishOnly(InterviewStep::class, 'name', [
             ['Apply', ['description' => 'Found a role that interests you? Send us your application and tell us about your experience, skills, and what makes you a good fit.']],
             ['Screening', ['description' => 'Our HR team reviews your application, qualifications, and experience to understand how well your profile matches the role.']],
-            ['Round 1: Skill Test', ['description' => 'A role-specific test or task that gives us a closer look at your skills, knowledge, and approach to work.']],
-            ['Round 2: HR Round', ['description' => 'A conversation with our HR team to get to know you better, understand your experience, and hear about your interests and career goals.']],
+            ['Round 1 – Skill Test', ['description' => 'Your first interview is an opportunity for us to get to know you better, understand your experience, and hear about your interests and career goals.']],
+            ['Round 2 – HR Round', ['description' => 'The next round gives us a closer look at your skills, perspective, and approach to work through further discussions or role-specific assessments.']],
             ['Final Result', ['description' => 'Once the interview process is complete, our HR team will share the outcome. For selected candidates, this is where the journey towards becoming part of Infolks Group begins.']],
         ]);
 
@@ -140,11 +140,11 @@ class WebsiteContentSeeder extends Seeder
         $this->publishOnly(Faq::class, 'question', [
             ['How can I explore current job openings at Infolks Group?', ['answer' => '<p>Visit our Job Search page to explore available opportunities across Infolks, Webfolks, Dataways, and Medrays. You can view the details and apply for positions that match your interests and qualifications.</p>']],
             ['Can I apply without selecting a specific job?', ['answer' => '<p>Yes. You can use our Quick Apply section to submit your profile without choosing a particular vacancy. Our HR team can consider your profile for suitable opportunities across the group.</p>']],
-            ['Does Infolks Group offer internship opportunities?', ['answer' => '<p>Yes. You can explore available internship opportunities through the Internship option in the top bar of our Careers page.</p>']],
-            ['Can I apply for more than one position?', ['answer' => '<p>Yes. You can apply for positions that match your qualifications and interests. Please ensure that your application details are accurate.</p><p>If you were shortlisted for a role and then not selected, you can apply for that same role again after 6 months. All other roles remain open to you.</p>']],
-            ['How will I know the status of my application?', ['answer' => '<p>Sign in with your Google account and select Candidate profile in the top bar. It shows the current status of each application you have made. Our HR team does not contact candidates for every update, so please check your status there.</p>']],
+            ['Does Infolks Group offer internship opportunities?', ['answer' => '<p>Yes. You can explore available internship opportunities through the Internship option in the top navigation bar.</p>']],
+            ['Can I apply for more than one position?', ['answer' => '<p>Yes. You can apply for different positions that match your qualifications and interests. However, if you have been rejected for a particular role after the shortlisting stage, you cannot reapply for the same role for the next six months. You are still welcome to apply for other available positions during this period.</p>']],
+            ['How will I know the status of my application?', ['answer' => '<p>Sign in to your candidate account and click the Candidate Profile button in the top navigation bar. You will be directed to the My Applications page, where you can view the current status of each application.</p>']],
             ['Can I create a profile for future opportunities?', ['answer' => '<p>Yes. Sign in using your Google account to create a candidate profile and stay connected with future opportunities.</p>']],
-            ['What happens after I submit my application?', ['answer' => '<p>Once you submit, you will receive a confirmation email, and your details will be available to our HR team for review. If your profile matches a suitable opportunity, the team will contact you.</p>']],
+            ['What happens after I submit my application?', ['answer' => '<p>After submitting your application, you will receive a confirmation email to your registered email address. You can also sign in to your candidate profile to view your application details and track its status through the My Applications page.</p>']],
         ]);
 
         foreach ([
